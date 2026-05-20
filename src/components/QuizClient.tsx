@@ -60,30 +60,30 @@ export default function QuizClient() {
     : Math.round((step / QUESTIONS.length) * 100);
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6">
-        <div className="flex justify-between text-xs font-medium text-stone-500">
+    <div>
+      <div className="mb-8">
+        <div className="flex justify-between text-[12px] font-medium text-ink-3">
           <span>
             {reviewing
-              ? "Review your answers"
+              ? "Review"
               : `Question ${step + 1} of ${QUESTIONS.length}`}
           </span>
           <span>{progress}%</span>
         </div>
-        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-amber-100">
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-canvas">
           <div
-            className="h-full rounded-full bg-amber-500 transition-all duration-300"
+            className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
       {!reviewing && (
-        <div key={step} className="animate-fade-in">
-          <h2 className="text-xl font-semibold leading-snug text-amber-900">
+        <div key={step} className="animate-rise">
+          <h2 className="text-[22px] font-semibold leading-snug tracking-tight text-ink sm:text-[26px]">
             {QUESTIONS[step].text}
           </h2>
-          <div className="mt-5 space-y-2.5">
+          <div className="mt-7 space-y-2">
             {QUESTIONS[step].options.map((opt, i) => {
               const value = i + 1;
               const selected = answers[step] === value;
@@ -91,22 +91,22 @@ export default function QuizClient() {
                 <button
                   key={value}
                   onClick={() => choose(value)}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition ${
+                  className={`flex w-full items-center gap-3.5 rounded-2xl border px-4 py-3.5 text-left transition ${
                     selected
-                      ? "border-amber-500 bg-amber-50 ring-2 ring-amber-200"
-                      : "border-amber-200 bg-white hover:border-amber-400 hover:bg-amber-50"
+                      ? "border-accent bg-accent/[0.05]"
+                      : "border-hairline bg-white hover:bg-canvas"
                   }`}
                 >
                   <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold transition ${
                       selected
-                        ? "bg-amber-500 text-white"
-                        : "bg-amber-100 text-amber-700"
+                        ? "bg-accent text-white"
+                        : "bg-canvas text-ink-2"
                     }`}
                   >
                     {value}
                   </span>
-                  <span className="text-stone-700">{opt}</span>
+                  <span className="text-[15px] text-ink">{opt}</span>
                 </button>
               );
             })}
@@ -114,40 +114,47 @@ export default function QuizClient() {
           {step > 0 && (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="mt-5 text-sm font-medium text-amber-700 hover:underline"
+              className="mt-6 text-[13px] font-medium text-accent hover:underline"
             >
-              ← Back
+              ← Previous
             </button>
           )}
         </div>
       )}
 
       {reviewing && (
-        <div className="animate-fade-in">
-          <div className="rounded-xl border border-amber-200 bg-white p-5 text-center">
-            <p className="text-sm text-stone-500">Your projected JQ score</p>
-            <p className="mt-1 text-4xl font-bold text-amber-600">
-              {liveScore}
-              <span className="text-lg text-stone-400"> / 50</span>
+        <div className="animate-rise">
+          <div className="rounded-3xl bg-canvas p-8 text-center">
+            <p className="text-[13px] font-medium text-ink-3">
+              Your projected JQ score
             </p>
-            <p className="mt-1 text-sm font-medium text-amber-800">
+            <p className="mt-2 text-6xl font-semibold tracking-tight text-ink">
+              {liveScore}
+              <span className="text-2xl font-normal text-ink-3"> / 50</span>
+            </p>
+            <p
+              className="mt-2 text-[15px] font-medium"
+              style={{ color: getBand(liveScore).color }}
+            >
               {getBand(liveScore).label}
             </p>
           </div>
 
-          <ul className="mt-5 space-y-2">
+          <ul className="mt-6 divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline">
             {QUESTIONS.map((q, i) => (
               <li
                 key={q.id}
-                className="flex items-start gap-3 rounded-lg border border-amber-100 bg-white px-3 py-2.5 text-sm"
+                className="flex items-center gap-3.5 bg-white px-4 py-3"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-canvas text-[13px] font-semibold text-ink-2">
                   {answers[i]}
                 </span>
-                <span className="flex-1 text-stone-600">{q.text}</span>
+                <span className="flex-1 text-[13px] leading-snug text-ink-2">
+                  {q.text}
+                </span>
                 <button
                   onClick={() => setStep(i)}
-                  className="shrink-0 text-xs font-medium text-amber-700 hover:underline"
+                  className="shrink-0 text-[13px] font-medium text-accent hover:underline"
                 >
                   Edit
                 </button>
@@ -155,9 +162,9 @@ export default function QuizClient() {
             ))}
           </ul>
 
-          <div className="mt-5">
-            <label className="text-sm font-medium text-amber-900">
-              Add a note (optional)
+          <div className="mt-6">
+            <label className="text-[13px] font-medium text-ink">
+              Add a note <span className="text-ink-3">(optional)</span>
             </label>
             <textarea
               value={note}
@@ -165,12 +172,12 @@ export default function QuizClient() {
               maxLength={500}
               rows={3}
               placeholder="What's going on in your life right now?"
-              className="mt-1.5 w-full resize-none rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+              className="mt-2 w-full resize-none rounded-xl bg-canvas px-4 py-3 text-[15px] text-ink placeholder:text-ink-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-accent/45"
             />
           </div>
 
           {error && (
-            <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-[13px] text-red-600">
               {error}
             </div>
           )}
@@ -178,7 +185,7 @@ export default function QuizClient() {
           <button
             onClick={submit}
             disabled={submitting || !allAnswered}
-            className="mt-4 w-full rounded-lg bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+            className="mt-5 w-full rounded-xl bg-accent py-3.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-55"
           >
             {submitting ? "Saving…" : "Save my JQ score"}
           </button>

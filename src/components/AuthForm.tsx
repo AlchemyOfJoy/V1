@@ -45,31 +45,34 @@ export default function AuthForm({
     }
   }
 
+  const field =
+    "w-full rounded-xl bg-canvas px-4 py-3 text-[15px] text-ink placeholder:text-ink-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-accent/45";
+
   return (
-    <div className="w-full max-w-sm">
-      <h1 className="text-2xl font-bold text-amber-900">
+    <div className="w-full max-w-[360px]">
+      <h1 className="text-[26px] font-semibold tracking-tight text-ink">
         {isSignup ? "Create your account" : "Welcome back"}
       </h1>
-      <p className="mt-1 text-sm text-stone-600">
+      <p className="mt-1 text-[15px] text-ink-2">
         {isSignup
           ? "Start tracking your joy today."
-          : "Sign in to see your joy journey."}
+          : "Sign in to continue your joy journey."}
       </p>
 
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mt-5 rounded-xl bg-red-50 px-4 py-2.5 text-[13px] text-red-600">
           {error}
         </div>
       )}
 
-      <form onSubmit={submit} className="mt-5 space-y-3">
+      <form onSubmit={submit} className="mt-6 space-y-2.5">
         {isSignup && (
           <input
             type="text"
             placeholder="First name (optional)"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+            className={field}
           />
         )}
         <input
@@ -78,7 +81,7 @@ export default function AuthForm({
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+          className={field}
         />
         <input
           type="password"
@@ -86,12 +89,12 @@ export default function AuthForm({
           placeholder={isSignup ? "Password (8+ characters)" : "Password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+          className={field}
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+          className="!mt-4 w-full rounded-xl bg-accent py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-55"
         >
           {loading
             ? "Please wait…"
@@ -103,16 +106,16 @@ export default function AuthForm({
 
       {googleEnabled && (
         <>
-          <div className="my-4 flex items-center gap-3 text-xs text-stone-400">
-            <span className="h-px flex-1 bg-amber-100" />
+          <div className="my-5 flex items-center gap-3 text-[12px] text-ink-3">
+            <span className="h-px flex-1 bg-hairline" />
             or
-            <span className="h-px flex-1 bg-amber-100" />
+            <span className="h-px flex-1 bg-hairline" />
           </div>
           <a
             href="/api/auth/google"
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-white py-2.5 text-sm font-medium text-stone-700 transition hover:bg-amber-50"
+            className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-hairline bg-white py-3 text-[15px] font-medium text-ink transition-colors hover:bg-canvas"
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+            <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden>
               <path
                 fill="#4285F4"
                 d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
@@ -135,18 +138,18 @@ export default function AuthForm({
         </>
       )}
 
-      <p className="mt-5 text-center text-sm text-stone-600">
+      <p className="mt-6 text-[13px] text-ink-2">
         {isSignup ? (
           <>
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-amber-700 hover:underline">
+            <Link href="/login" className="text-accent hover:underline">
               Sign in
             </Link>
           </>
         ) : (
           <>
             New here?{" "}
-            <Link href="/signup" className="font-semibold text-amber-700 hover:underline">
+            <Link href="/signup" className="text-accent hover:underline">
               Create an account
             </Link>
           </>

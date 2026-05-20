@@ -10,14 +10,14 @@ export default async function AssessmentPage() {
   return (
     <>
       <SiteHeader user={user} />
-      <main className="mx-auto max-w-xl px-6 py-10">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-amber-950">
+      <main className="mx-auto max-w-xl px-6 py-14">
+        <div className="mb-10">
+          <h1 className="text-[32px] font-semibold tracking-tight text-ink">
             JQ Assessment
           </h1>
-          <p className="mt-1 text-sm text-stone-600">
-            For each question, choose the number that best reflects your
-            current experience in life. Be honest — this is for you.
+          <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
+            For each question, choose the answer that best reflects your
+            current experience. Be honest — this is just for you.
           </p>
         </div>
         <QuizClient />

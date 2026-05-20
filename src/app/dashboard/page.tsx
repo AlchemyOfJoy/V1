@@ -8,7 +8,10 @@ import ScoreChart from "@/components/ScoreChart";
 
 function fmtDate(iso: string, opts?: Intl.DateTimeFormatOptions) {
   const d = new Date(iso.replace(" ", "T") + "Z");
-  return d.toLocaleDateString("en-US", opts ?? { month: "short", day: "numeric" });
+  return d.toLocaleDateString(
+    "en-US",
+    opts ?? { month: "short", day: "numeric" },
+  );
 }
 
 export default async function DashboardPage({
@@ -35,24 +38,23 @@ export default async function DashboardPage({
   return (
     <>
       <SiteHeader user={user} />
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-2xl font-bold text-amber-950">
+      <main className="mx-auto max-w-3xl px-6 py-14">
+        <h1 className="text-[32px] font-semibold tracking-tight text-ink">
           Your joy journey{greeting}
         </h1>
 
         {rows.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-amber-200 bg-white p-10 text-center">
-            <div className="text-4xl">🌱</div>
-            <h2 className="mt-3 text-lg font-semibold text-amber-900">
-              No assessments yet
+          <div className="mt-10 rounded-3xl bg-canvas px-8 py-16 text-center">
+            <h2 className="text-[20px] font-semibold tracking-tight text-ink">
+              Set your starting line
             </h2>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-stone-600">
-              Take your first JQ assessment to set your starting line. It only
-              takes about 5 minutes.
+            <p className="mx-auto mt-2 max-w-sm text-[15px] leading-relaxed text-ink-2">
+              Take your first JQ assessment to capture where you are today. It
+              only takes about five minutes.
             </p>
             <Link
               href="/assessment"
-              className="mt-5 inline-block rounded-full bg-amber-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600"
+              className="mt-7 inline-block rounded-full bg-accent px-6 py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90"
             >
               Take your first assessment
             </Link>
@@ -60,67 +62,80 @@ export default async function DashboardPage({
         ) : (
           <>
             {newId && latest?.id === newId && (
-              <div className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
-                ✨ Your assessment was saved. Here&apos;s how your joy is
+              <div className="mt-5 rounded-xl bg-accent/10 px-4 py-3 text-[13px] font-medium text-[#b35f00]">
+                Your assessment was saved — here&apos;s how your joy is
                 trending.
               </div>
             )}
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-amber-200 bg-white p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-hairline p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
                   Latest JQ
                 </p>
-                <p className="mt-1 text-3xl font-bold text-amber-600">
+                <p className="mt-2 text-[40px] font-semibold leading-none tracking-tight text-ink">
                   {latest.score}
-                  <span className="text-base text-stone-400"> / 50</span>
+                  <span className="text-[17px] font-normal text-ink-3">
+                    {" "}
+                    / 50
+                  </span>
                 </p>
                 <p
-                  className="mt-1 text-sm font-semibold"
+                  className="mt-2 text-[13px] font-medium"
                   style={{ color: getBand(latest.score).color }}
                 >
                   {getBand(latest.score).label}
                 </p>
               </div>
-              <div className="rounded-xl border border-amber-200 bg-white p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+              <div className="rounded-2xl border border-hairline p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
                   Change
                 </p>
-                <p className="mt-1 text-3xl font-bold text-amber-900">
+                <p
+                  className="mt-2 text-[40px] font-semibold leading-none tracking-tight"
+                  style={{
+                    color:
+                      delta === null || delta === 0
+                        ? "var(--ink)"
+                        : delta > 0
+                          ? "#1d9d4f"
+                          : "#c0612f",
+                  }}
+                >
                   {delta === null
                     ? "—"
                     : delta > 0
                       ? `+${delta}`
                       : `${delta}`}
                 </p>
-                <p className="mt-1 text-sm text-stone-500">
+                <p className="mt-2 text-[13px] text-ink-2">
                   {delta === null
                     ? "Take another to compare"
                     : delta > 0
-                      ? "Joy is rising 📈"
+                      ? "Joy is rising"
                       : delta < 0
                         ? "A dip — be gentle with yourself"
                         : "Holding steady"}
                 </p>
               </div>
-              <div className="rounded-xl border border-amber-200 bg-white p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+              <div className="rounded-2xl border border-hairline p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">
                   Check-ins
                 </p>
-                <p className="mt-1 text-3xl font-bold text-amber-900">
+                <p className="mt-2 text-[40px] font-semibold leading-none tracking-tight text-ink">
                   {rows.length}
                 </p>
-                <p className="mt-1 text-sm text-stone-500">
+                <p className="mt-2 text-[13px] text-ink-2">
                   Since {fmtDate(rows[0].created_at)}
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 rounded-xl border border-amber-200 bg-white p-5">
-              <h2 className="text-sm font-semibold text-amber-900">
+            <div className="mt-3 rounded-2xl border border-hairline p-6">
+              <h2 className="text-[15px] font-semibold text-ink">
                 Score over time
               </h2>
-              <div className="mt-2">
+              <div className="mt-3">
                 <ScoreChart
                   data={rows.map((r) => ({
                     score: r.score,
@@ -130,40 +145,38 @@ export default async function DashboardPage({
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-10">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-amber-900">
+                <h2 className="text-[20px] font-semibold tracking-tight text-ink">
                   History
                 </h2>
                 <Link
                   href="/assessment"
-                  className="rounded-full bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-amber-600"
+                  className="rounded-full bg-accent px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
                 >
                   New check-in
                 </Link>
               </div>
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-4 divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline">
                 {[...rows].reverse().map((r) => {
                   const band = getBand(r.score);
                   return (
                     <li
                       key={r.id}
-                      className="flex items-start gap-4 rounded-xl border border-amber-100 bg-white px-4 py-3"
+                      className="flex items-center gap-4 px-5 py-4"
                     >
                       <div
-                        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-white"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[17px] font-semibold text-white"
                         style={{ backgroundColor: band.color }}
                       >
-                        <span className="text-lg font-bold leading-none">
-                          {r.score}
-                        </span>
+                        {r.score}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-amber-900">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-[15px] font-medium text-ink">
                             {band.label}
                           </span>
-                          <span className="text-xs text-stone-400">
+                          <span className="text-[12px] text-ink-3">
                             {fmtDate(r.created_at, {
                               month: "short",
                               day: "numeric",
@@ -172,7 +185,7 @@ export default async function DashboardPage({
                           </span>
                         </div>
                         {r.note && (
-                          <p className="mt-0.5 truncate text-sm text-stone-600">
+                          <p className="mt-0.5 truncate text-[13px] text-ink-2">
                             {r.note}
                           </p>
                         )}
