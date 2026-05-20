@@ -80,30 +80,45 @@ export default function ScoreChart({ data }: { data: Point[] }) {
         />
       )}
 
-      {points.map((p, i) => (
-        <g key={i}>
-          <circle cx={p.cx} cy={p.cy} r="5" fill="#fff" stroke="#f59e0b" strokeWidth="2.5" />
-          <text
-            x={p.cx}
-            y={p.cy - 12}
-            textAnchor="middle"
-            fontSize="11"
-            fontWeight="700"
-            fill="#b45309"
-          >
-            {p.score}
-          </text>
-          <text
-            x={p.cx}
-            y={H - 12}
-            textAnchor="middle"
-            fontSize="10"
-            fill="#a8a29e"
-          >
-            {p.date}
-          </text>
-        </g>
-      ))}
+      {points.map((p, i) => {
+        const anchor =
+          points.length > 1 && i === 0
+            ? "start"
+            : points.length > 1 && i === points.length - 1
+              ? "end"
+              : "middle";
+        return (
+          <g key={i}>
+            <circle
+              cx={p.cx}
+              cy={p.cy}
+              r="5"
+              fill="#fff"
+              stroke="#f59e0b"
+              strokeWidth="2.5"
+            />
+            <text
+              x={p.cx}
+              y={p.cy - 12}
+              textAnchor={anchor}
+              fontSize="11"
+              fontWeight="700"
+              fill="#b45309"
+            >
+              {p.score}
+            </text>
+            <text
+              x={p.cx}
+              y={H - 12}
+              textAnchor={anchor}
+              fontSize="10"
+              fill="#a8a29e"
+            >
+              {p.date}
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
