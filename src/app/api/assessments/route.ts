@@ -34,11 +34,18 @@ export async function POST(req: NextRequest) {
   const score = (answers as number[]).reduce((sum, a) => sum + a, 0);
   const id = randomUUID();
 
-  await query(
-    `INSERT INTO assessments (id, user_id, score, answers, note)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [id, user.id, score, JSON.stringify(answers), note || null],
-  );
-
-  return NextResponse.json({ id, score });
+  try {
+    await query(
+      `INSERT INTO assessments (id, user_id, score, answers, note)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [id, user.id, score, JSON.stringify(answers), note || null],
+    );
+    return NextResponse.json({ id, score });
+  } catch (err) {
+    console.error("[assessments] save failed:", err);
+    return NextResponse.json(
+      { error: "We couldn't save your assessment. Please try again." },
+      { status: 500 },
+    );
+  }
 }

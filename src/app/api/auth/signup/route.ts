@@ -33,20 +33,31 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  if (await getUserByEmail(email)) {
+  try {
+    if (await getUserByEmail(email)) {
+      return NextResponse.json(
+        { error: "An account with that email already exists." },
+        { status: 409 },
+      );
+    }
+
+    const user = await createUser({
+      email,
+      name: name || null,
+      passwordHash: hashPassword(password),
+    });
+    const token = await createSessionToken(user.id);
+    await setSessionCookie(token);
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[signup] failed:", err);
     return NextResponse.json(
-      { error: "An account with that email already exists." },
-      { status: 409 },
+      {
+        error:
+          "We couldn't create your account right now. Please try again in a moment.",
+      },
+      { status: 500 },
     );
   }
-
-  const user = await createUser({
-    email,
-    name: name || null,
-    passwordHash: hashPassword(password),
-  });
-  const token = await createSessionToken(user.id);
-  await setSessionCookie(token);
-
-  return NextResponse.json({ ok: true });
 }

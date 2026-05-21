@@ -119,15 +119,21 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const sessions = await query<{ user_id: string }>(
-    "SELECT user_id FROM sessions WHERE token = $1 AND expires_at > now()",
-    [token],
-  );
-  if (!sessions[0]) return null;
+  try {
+    const sessions = await query<{ user_id: string }>(
+      "SELECT user_id FROM sessions WHERE token = $1 AND expires_at > now()",
+      [token],
+    );
+    if (!sessions[0]) return null;
 
-  const user = await getUserById(sessions[0].user_id);
-  if (!user) return null;
-  return { id: user.id, email: user.email, name: user.name };
+    const user = await getUserById(sessions[0].user_id);
+    if (!user) return null;
+    return { id: user.id, email: user.email, name: user.name };
+  } catch (err) {
+    // A database hiccup should degrade to "logged out", not crash the page.
+    console.error("[auth] getCurrentUser failed:", (err as Error).message);
+    return null;
+  }
 }
 
 export function isGoogleEnabled(): boolean {
