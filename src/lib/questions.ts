@@ -79,7 +79,7 @@ export const BANDS: JQBand[] = [
     label: "Low JQ",
     min: 10,
     max: 20,
-    color: "#64748b",
+    color: "#4a5568",
     summary:
       "You may not be investing in daily joy as much as you could. Consider small changes to bring more presence, gratitude, and joyful activities into your routine.",
   },
@@ -87,7 +87,7 @@ export const BANDS: JQBand[] = [
     label: "Moderate JQ",
     min: 21,
     max: 30,
-    color: "#4fb3c9",
+    color: "#007ea7",
     summary:
       "You experience moments of joy, but there's potential for more. Reflect on what brings you intrinsic joy and create more space for these experiences.",
   },
@@ -103,7 +103,7 @@ export const BANDS: JQBand[] = [
     label: "Very High JQ",
     min: 41,
     max: 50,
-    color: "#facc15",
+    color: "#d4af37",
     summary:
       "You live with a rich sense of joy and fulfillment, savoring each day. Keep prioritizing your well-being and inspiring others with your joyful presence!",
   },

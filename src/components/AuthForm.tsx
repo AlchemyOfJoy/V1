@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { btnPrimary } from "@/lib/ui";
 
 export default function AuthForm({
   mode,
@@ -46,9 +47,9 @@ export default function AuthForm({
   }
 
   const label =
-    "mb-1.5 block font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-navy/55";
+    "mb-2 block font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-navy/55";
   const field =
-    "w-full rounded-xl border border-navy/12 bg-bone-raised px-4 py-3 font-sans text-[15px] text-navy outline-none transition placeholder:text-navy/35 focus:border-cyan focus:ring-2 focus:ring-cyan/25";
+    "w-full rounded-xl border border-navy/15 bg-white px-4 py-3 font-sans text-[15px] text-navy outline-none transition duration-150 placeholder:text-navy/35 focus:border-cyan focus:ring-2 focus:ring-cyan/25";
 
   return (
     <div className="w-full max-w-[380px] animate-fade-in">
@@ -63,15 +64,16 @@ export default function AuthForm({
           </>
         )}
       </h1>
-      <p className="mt-1.5 font-sans text-[15px] text-navy/60">
+      <p className="mt-2 font-sans text-[15px] font-light text-navy/60">
         {isSignup
           ? "Start tracking your joy today."
           : "Sign in to continue your joy journey."}
       </p>
 
       {error && (
-        <div className="mt-6 rounded-xl border border-gold/40 bg-gold/15 px-4 py-3 font-sans text-[13px] text-[#8a6d00]">
-          {error}
+        <div className="mt-6 flex items-start gap-2 rounded-xl border border-gold/45 bg-gold/12 px-4 py-3 font-sans text-[13px] text-[#8a6d00]">
+          <span aria-hidden>✦</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -79,7 +81,8 @@ export default function AuthForm({
         {isSignup && (
           <div>
             <label htmlFor="name" className={label}>
-              First name <span className="font-normal lowercase">(optional)</span>
+              First name{" "}
+              <span className="font-normal lowercase">(optional)</span>
             </label>
             <input
               id="name"
@@ -120,7 +123,7 @@ export default function AuthForm({
         <button
           type="submit"
           disabled={loading}
-          className="!mt-6 w-full rounded-full bg-cyan py-3.5 font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-bone transition-all duration-300 hover:-translate-y-0.5 hover:bg-navy disabled:pointer-events-none disabled:opacity-50"
+          className={`${btnPrimary} !mt-7 w-full`}
         >
           {loading
             ? "One moment…"
@@ -139,7 +142,7 @@ export default function AuthForm({
           </div>
           <a
             href="/api/auth/google"
-            className="flex w-full items-center justify-center gap-2.5 rounded-full border border-navy/15 bg-bone-raised py-3.5 font-sans text-[14px] font-medium text-navy transition hover:border-navy/30"
+            className="flex w-full items-center justify-center gap-2.5 rounded-full border border-navy/15 bg-white py-3.5 font-sans text-[14px] font-medium text-navy transition duration-150 hover:border-navy/35"
           >
             <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden>
               <path
@@ -168,14 +171,20 @@ export default function AuthForm({
         {isSignup ? (
           <>
             Already have an account?{" "}
-            <Link href="/login" className="text-cyan hover:underline">
+            <Link
+              href="/login"
+              className="font-medium text-navy underline decoration-navy/30 underline-offset-2 transition-colors duration-150 hover:text-cyan hover:decoration-cyan"
+            >
               Sign in
             </Link>
           </>
         ) : (
           <>
             New here?{" "}
-            <Link href="/signup" className="text-cyan hover:underline">
+            <Link
+              href="/signup"
+              className="font-medium text-navy underline decoration-navy/30 underline-offset-2 transition-colors duration-150 hover:text-cyan hover:decoration-cyan"
+            >
               Create an account
             </Link>
           </>

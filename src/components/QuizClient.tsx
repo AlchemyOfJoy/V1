@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { QUESTIONS, getBand } from "@/lib/questions";
+import { btnPrimary } from "@/lib/ui";
 import { Spark } from "@/components/icons";
 
 export default function QuizClient() {
@@ -63,7 +64,7 @@ export default function QuizClient() {
 
   return (
     <div>
-      <div className="mb-9">
+      <div className="mb-10">
         <div className="flex justify-between font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
           <span>
             {reviewing
@@ -72,7 +73,7 @@ export default function QuizClient() {
           </span>
           <span>{progress}%</span>
         </div>
-        <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-navy/10">
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-navy/10">
           <div
             className="h-full rounded-full bg-cyan transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
@@ -93,17 +94,17 @@ export default function QuizClient() {
                 <button
                   key={value}
                   onClick={() => choose(value)}
-                  className={`flex w-full items-center gap-4 rounded-2xl border px-4 py-4 text-left transition ${
+                  className={`flex w-full items-center gap-4 rounded-xl border px-4 py-4 text-left transition duration-150 ${
                     selected
-                      ? "border-cyan bg-cyan/[0.07]"
-                      : "border-navy/12 bg-bone-raised hover:border-cyan/45"
+                      ? "border-cyan bg-cyan/[0.06]"
+                      : "border-navy/12 bg-white hover:border-cyan/50"
                   }`}
                 >
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-sans text-[13px] font-bold transition ${
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-sans text-[13px] font-bold transition duration-150 ${
                       selected
-                        ? "bg-cyan text-bone"
-                        : "bg-navy/8 text-navy/55"
+                        ? "bg-cyan text-white"
+                        : "bg-mist text-navy/55"
                     }`}
                   >
                     {value}
@@ -118,7 +119,7 @@ export default function QuizClient() {
           {step > 0 && (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="mt-7 font-sans text-[13px] font-medium text-cyan hover:underline"
+              className="mt-7 font-sans text-[13px] font-medium text-cyan transition-colors duration-150 hover:text-navy"
             >
               ← Previous question
             </button>
@@ -128,28 +129,28 @@ export default function QuizClient() {
 
       {reviewing && (
         <div className="animate-fade-in">
-          <div className="rounded-3xl bg-navy px-8 py-10 text-center">
+          <div className="rounded-2xl bg-navy px-8 py-12 text-center">
             <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan">
               Your projected score
             </p>
-            <p className="mt-3 font-serif text-7xl font-medium leading-none tracking-tight text-bone">
+            <p className="mt-4 font-serif text-7xl font-medium leading-none tracking-tight text-white">
               {liveScore}
-              <span className="font-sans text-2xl font-normal text-bone/45">
+              <span className="font-sans text-2xl font-light text-white/45">
                 {" "}
                 / 50
               </span>
             </p>
             <p
-              className="mt-3 flex items-center justify-center gap-2 font-sans text-[14px] font-semibold uppercase tracking-[0.16em]"
+              className="mt-4 flex items-center justify-center gap-2.5 font-sans text-[13px] font-semibold uppercase tracking-[0.18em]"
               style={{ color: band.color }}
             >
-              <Spark size={14} color={band.color} />
+              <Spark size={13} />
               {band.label}
-              <Spark size={14} color={band.color} />
+              <Spark size={13} />
             </p>
           </div>
 
-          <ul className="mt-6 divide-y divide-navy/10 overflow-hidden rounded-2xl border border-navy/12 bg-bone-raised">
+          <ul className="mt-6 divide-y divide-navy/8 overflow-hidden rounded-xl bg-mist">
             {QUESTIONS.map((q, i) => (
               <li key={q.id} className="flex items-center gap-4 px-4 py-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan/12 font-sans text-[13px] font-bold text-cyan">
@@ -160,7 +161,7 @@ export default function QuizClient() {
                 </span>
                 <button
                   onClick={() => setStep(i)}
-                  className="shrink-0 font-sans text-[12px] font-semibold uppercase tracking-[0.12em] text-cyan hover:underline"
+                  className="shrink-0 font-sans text-[12px] font-semibold uppercase tracking-[0.12em] text-cyan transition-colors duration-150 hover:text-navy"
                 >
                   Edit
                 </button>
@@ -171,7 +172,7 @@ export default function QuizClient() {
           <div className="mt-6">
             <label
               htmlFor="note"
-              className="mb-1.5 block font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-navy/55"
+              className="mb-2 block font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-navy/55"
             >
               Add a note{" "}
               <span className="font-normal lowercase">(optional)</span>
@@ -183,20 +184,21 @@ export default function QuizClient() {
               maxLength={500}
               rows={3}
               placeholder="What's going on in your life right now?"
-              className="w-full resize-none rounded-xl border border-navy/12 bg-bone-raised px-4 py-3 font-sans text-[15px] text-navy outline-none transition placeholder:text-navy/35 focus:border-cyan focus:ring-2 focus:ring-cyan/25"
+              className="w-full resize-none rounded-xl border border-navy/15 bg-white px-4 py-3 font-sans text-[15px] text-navy outline-none transition duration-150 placeholder:text-navy/35 focus:border-cyan focus:ring-2 focus:ring-cyan/25"
             />
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl border border-gold/40 bg-gold/15 px-4 py-3 font-sans text-[13px] text-[#8a6d00]">
-              {error}
+            <div className="mt-4 flex items-start gap-2 rounded-xl border border-gold/45 bg-gold/12 px-4 py-3 font-sans text-[13px] text-[#8a6d00]">
+              <span aria-hidden>✦</span>
+              <span>{error}</span>
             </div>
           )}
 
           <button
             onClick={submit}
             disabled={submitting || !allAnswered}
-            className="mt-6 w-full rounded-full bg-cyan py-3.5 font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-bone transition-all duration-300 hover:-translate-y-0.5 hover:bg-navy disabled:pointer-events-none disabled:opacity-50"
+            className={`${btnPrimary} mt-6 w-full`}
           >
             {submitting ? "Saving…" : "Save my JQ score"}
           </button>

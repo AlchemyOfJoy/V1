@@ -39,13 +39,6 @@ export default function ScoreChart({ data }: { data: Point[] }) {
       role="img"
       aria-label="Joy Quotient score history chart"
     >
-      <defs>
-        <linearGradient id="jqArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#00a8e8" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#00a8e8" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
       {gridLines.map((g) => (
         <g key={g}>
           <line
@@ -54,7 +47,7 @@ export default function ScoreChart({ data }: { data: Point[] }) {
             y1={y(g)}
             y2={y(g)}
             stroke="#00171f"
-            strokeOpacity="0.09"
+            strokeOpacity="0.08"
             strokeWidth="1"
           />
           <text
@@ -62,14 +55,16 @@ export default function ScoreChart({ data }: { data: Point[] }) {
             y={y(g) + 4}
             textAnchor="end"
             fontSize="11"
-            fill="#64748b"
+            fill="#4a5568"
           >
             {g}
           </text>
         </g>
       ))}
 
-      {areaPath && <path d={areaPath} fill="url(#jqArea)" />}
+      {areaPath && (
+        <path d={areaPath} fill="#00a8e8" fillOpacity="0.08" />
+      )}
       {points.length > 1 && (
         <path
           d={linePath}
@@ -94,7 +89,7 @@ export default function ScoreChart({ data }: { data: Point[] }) {
               cx={p.cx}
               cy={p.cy}
               r="4.5"
-              fill="#f4efe6"
+              fill="#ffffff"
               stroke="#00a8e8"
               strokeWidth="2.5"
             />
@@ -113,7 +108,7 @@ export default function ScoreChart({ data }: { data: Point[] }) {
               y={H - 11}
               textAnchor={anchor}
               fontSize="11"
-              fill="#64748b"
+              fill="#4a5568"
             >
               {p.date}
             </text>

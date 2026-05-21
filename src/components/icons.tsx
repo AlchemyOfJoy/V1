@@ -1,10 +1,10 @@
 /**
- * Brand icon set — geometric line icons with Alchemy Gold spark accents,
- * echoing the brand's particle/sparkle motif. Main strokes use
- * `currentColor`; gold punctuation is intentional and fixed.
+ * Brand icon set — geometric line icons with Alchemy Gold spark accents.
+ * Per the brand guide, sparkles are ALWAYS rendered in gold and never
+ * recolored. Main strokes use `currentColor`.
  */
 
-const GOLD = "#facc15";
+const GOLD = "#d4af37";
 
 function Svg({
   size = 24,
@@ -33,14 +33,12 @@ function Svg({
   );
 }
 
-/** Small filled 4-point spark — the brand's signature particle. */
+/** A single 4-point Alchemy Gold spark — the brand's signature particle. */
 export function Spark({
   size = 14,
-  color = GOLD,
   className,
 }: {
   size?: number;
-  color?: string;
   className?: string;
 }) {
   return (
@@ -53,13 +51,26 @@ export function Spark({
     >
       <path
         d="M8 0.6 L9.7 6.3 L15.4 8 L9.7 9.7 L8 15.4 L6.3 9.7 L0.6 8 L6.3 6.3 Z"
-        fill={color}
+        fill={GOLD}
       />
     </svg>
   );
 }
 
-/** Take the assessment — a checklist page with a spark. */
+/** Triple Sparkle — the brand's default bullet / section divider motif. */
+export function TripleSparkle({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 ${className ?? ""}`}
+      aria-hidden="true"
+    >
+      <Spark size={9} />
+      <Spark size={14} />
+      <Spark size={9} />
+    </span>
+  );
+}
+
 export function AssessmentIcon({
   size,
   className,
@@ -82,7 +93,6 @@ export function AssessmentIcon({
   );
 }
 
-/** Save every score — a bookmark holding a spark. */
 export function SaveIcon({
   size,
   className,
@@ -102,7 +112,6 @@ export function SaveIcon({
   );
 }
 
-/** Watch the curve rise — an ascending line peaking at a spark. */
 export function GrowthIcon({
   size,
   className,
@@ -123,7 +132,6 @@ export function GrowthIcon({
   );
 }
 
-/** Latest score — a target ringing a spark. */
 export function LatestIcon({
   size,
   className,
@@ -144,7 +152,6 @@ export function LatestIcon({
   );
 }
 
-/** Change — an upward trend arrow. */
 export function ChangeIcon({
   size,
   className,
@@ -161,7 +168,6 @@ export function ChangeIcon({
   );
 }
 
-/** Check-ins — a repeating cycle around a spark. */
 export function CheckinsIcon({
   size,
   className,
@@ -184,7 +190,7 @@ export function CheckinsIcon({
   );
 }
 
-/** Decorative spark cluster — the three-pillar particle motif. */
+/** Decorative gold spark cluster for empty states. */
 export function SparkCluster({ className }: { className?: string }) {
   return (
     <svg
@@ -197,15 +203,17 @@ export function SparkCluster({ className }: { className?: string }) {
     >
       <path
         d="M30 6l3.4 9.6L43 19l-9.6 3.4L30 32l-3.4-9.6L17 19l9.6-3.4z"
-        fill="#00a8e8"
-      />
-      <path
-        d="M48 26l1.9 5.3L55 33l-5.1 1.7L48 40l-1.9-5.3L41 33l5.1-1.7z"
         fill={GOLD}
       />
       <path
-        d="M16 34l1.5 4.2L22 40l-4.5 1.5L16 46l-1.5-4.5L10 40l4.5-1.8z"
-        fill="#4fb3c9"
+        d="M48 24l2 5.6L56 32l-6 2.4L48 40l-2-5.6L40 32l6-2.4z"
+        fill={GOLD}
+        opacity="0.85"
+      />
+      <path
+        d="M15 33l1.6 4.4L21 39l-4.4 1.8L15 45l-1.6-4.2L9 39l4.4-1.6z"
+        fill={GOLD}
+        opacity="0.7"
       />
     </svg>
   );

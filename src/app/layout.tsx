@@ -12,7 +12,7 @@ const garamond = EB_Garamond({
 
 const raleway = Raleway({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-raleway",
   display: "swap",
 });
@@ -35,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${garamond.variable} ${raleway.variable}`}>
-      <body className="min-h-screen bg-bone font-sans text-navy antialiased">
+      <body className="min-h-screen bg-white font-sans text-navy antialiased">
         {children}
       </body>
     </html>
