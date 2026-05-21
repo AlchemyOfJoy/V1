@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  cookieOptions,
   createSessionToken,
   createUser,
   getUserByEmail,
@@ -58,14 +59,14 @@ export async function GET(req: NextRequest) {
     };
     if (!profile.id || !profile.email) return fail("google_profile");
 
-    let user = getUserByGoogleId(profile.id);
+    let user = await getUserByGoogleId(profile.id);
     if (!user) {
-      const existing = getUserByEmail(profile.email);
+      const existing = await getUserByEmail(profile.email);
       if (existing) {
-        linkGoogleId(existing.id, profile.id);
+        await linkGoogleId(existing.id, profile.id);
         user = existing;
       } else {
-        user = createUser({
+        user = await createUser({
           email: profile.email,
           name: profile.name ?? null,
           googleId: profile.id,
@@ -73,15 +74,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const token = createSessionToken(user.id);
+    const token = await createSessionToken(user.id);
     const res = NextResponse.redirect(new URL("/dashboard", origin));
-    res.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-    });
+    res.cookies.set(SESSION_COOKIE, token, cookieOptions());
     res.cookies.delete("g_oauth_state");
     return res;
   } catch {

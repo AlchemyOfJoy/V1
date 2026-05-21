@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { db } from "@/lib/db";
+import { query } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { QUESTIONS } from "@/lib/questions";
 
@@ -34,10 +34,11 @@ export async function POST(req: NextRequest) {
   const score = (answers as number[]).reduce((sum, a) => sum + a, 0);
   const id = randomUUID();
 
-  db.prepare(
+  await query(
     `INSERT INTO assessments (id, user_id, score, answers, note)
-     VALUES (?, ?, ?, ?, ?)`,
-  ).run(id, user.id, score, JSON.stringify(answers), note || null);
+     VALUES ($1, $2, $3, $4, $5)`,
+    [id, user.id, score, JSON.stringify(answers), note || null],
+  );
 
   return NextResponse.json({ id, score });
 }

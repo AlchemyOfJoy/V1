@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const email = (body.email ?? "").trim().toLowerCase();
   const password = body.password ?? "";
 
-  const user = getUserByEmail(email);
+  const user = await getUserByEmail(email);
   if (!user || !user.password_hash || !verifyPassword(password, user.password_hash)) {
     return NextResponse.json(
       { error: "Incorrect email or password." },
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const token = createSessionToken(user.id);
+  const token = await createSessionToken(user.id);
   await setSessionCookie(token);
 
   return NextResponse.json({ ok: true });

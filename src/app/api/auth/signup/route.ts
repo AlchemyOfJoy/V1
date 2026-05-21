@@ -33,19 +33,19 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  if (getUserByEmail(email)) {
+  if (await getUserByEmail(email)) {
     return NextResponse.json(
       { error: "An account with that email already exists." },
       { status: 409 },
     );
   }
 
-  const user = createUser({
+  const user = await createUser({
     email,
     name: name || null,
     passwordHash: hashPassword(password),
   });
-  const token = createSessionToken(user.id);
+  const token = await createSessionToken(user.id);
   await setSessionCookie(token);
 
   return NextResponse.json({ ok: true });

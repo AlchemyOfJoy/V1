@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { randomBytes, randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
-import { db, UserRow } from "./db";
+import { query, UserRow } from "./db";
 
 export const SESSION_COOKIE = "jq_session";
 const SESSION_DAYS = 30;
@@ -20,76 +20,96 @@ export function verifyPassword(password: string, hash: string): boolean {
   return bcrypt.compareSync(password, hash);
 }
 
-export function createUser(opts: {
+export async function createUser(opts: {
   email: string;
   name?: string | null;
   passwordHash?: string | null;
   googleId?: string | null;
-}): UserRow {
+}): Promise<UserRow> {
   const id = randomUUID();
-  db.prepare(
+  await query(
     `INSERT INTO users (id, email, name, password_hash, google_id)
-     VALUES (?, ?, ?, ?, ?)`,
-  ).run(
-    id,
-    opts.email.toLowerCase(),
-    opts.name ?? null,
-    opts.passwordHash ?? null,
-    opts.googleId ?? null,
+     VALUES ($1, $2, $3, $4, $5)`,
+    [
+      id,
+      opts.email.toLowerCase(),
+      opts.name ?? null,
+      opts.passwordHash ?? null,
+      opts.googleId ?? null,
+    ],
   );
-  return getUserById(id)!;
+  return (await getUserById(id))!;
 }
 
-export function getUserByEmail(email: string): UserRow | undefined {
-  return db
-    .prepare("SELECT * FROM users WHERE email = ?")
-    .get(email.toLowerCase()) as UserRow | undefined;
+export async function getUserByEmail(
+  email: string,
+): Promise<UserRow | undefined> {
+  const rows = await query<UserRow>("SELECT * FROM users WHERE email = $1", [
+    email.toLowerCase(),
+  ]);
+  return rows[0];
 }
 
-export function getUserById(id: string): UserRow | undefined {
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(id) as
-    | UserRow
-    | undefined;
+export async function getUserById(id: string): Promise<UserRow | undefined> {
+  const rows = await query<UserRow>("SELECT * FROM users WHERE id = $1", [id]);
+  return rows[0];
 }
 
-export function getUserByGoogleId(googleId: string): UserRow | undefined {
-  return db.prepare("SELECT * FROM users WHERE google_id = ?").get(googleId) as
-    | UserRow
-    | undefined;
+export async function getUserByGoogleId(
+  googleId: string,
+): Promise<UserRow | undefined> {
+  const rows = await query<UserRow>(
+    "SELECT * FROM users WHERE google_id = $1",
+    [googleId],
+  );
+  return rows[0];
 }
 
-export function linkGoogleId(userId: string, googleId: string): void {
-  db.prepare("UPDATE users SET google_id = ? WHERE id = ?").run(
+export async function linkGoogleId(
+  userId: string,
+  googleId: string,
+): Promise<void> {
+  await query("UPDATE users SET google_id = $1 WHERE id = $2", [
     googleId,
     userId,
-  );
+  ]);
 }
 
-export function createSessionToken(userId: string): string {
+export async function createSessionToken(userId: string): Promise<string> {
   const token = randomBytes(32).toString("hex");
-  const expiresAt = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
-  db.prepare(
-    "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
-  ).run(token, userId, expiresAt);
+  await query(
+    `INSERT INTO sessions (token, user_id, expires_at)
+     VALUES ($1, $2, now() + ($3 || ' days')::interval)`,
+    [token, userId, String(SESSION_DAYS)],
+  );
   return token;
+}
+
+/** Cookie options — SameSite=None in production so the app also works
+ *  embedded in an iframe on another domain. */
+function cookieOptions() {
+  const prod = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: prod,
+    sameSite: (prod ? "none" : "lax") as "none" | "lax",
+    path: "/",
+    maxAge: SESSION_DAYS * 24 * 60 * 60,
+  };
 }
 
 export async function setSessionCookie(token: string): Promise<void> {
   const store = await cookies();
-  store.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_DAYS * 24 * 60 * 60,
-  });
+  store.set(SESSION_COOKIE, token, cookieOptions());
 }
+
+export { cookieOptions };
 
 export async function clearSession(): Promise<void> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (token) {
-    db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+    await query("DELETE FROM sessions WHERE token = $1", [token]);
   }
   store.delete(SESSION_COOKIE);
 }
@@ -99,17 +119,13 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const session = db
-    .prepare("SELECT * FROM sessions WHERE token = ?")
-    .get(token) as { user_id: string; expires_at: number } | undefined;
+  const sessions = await query<{ user_id: string }>(
+    "SELECT user_id FROM sessions WHERE token = $1 AND expires_at > now()",
+    [token],
+  );
+  if (!sessions[0]) return null;
 
-  if (!session) return null;
-  if (session.expires_at < Date.now()) {
-    db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
-    return null;
-  }
-
-  const user = getUserById(session.user_id);
+  const user = await getUserById(sessions[0].user_id);
   if (!user) return null;
   return { id: user.id, email: user.email, name: user.name };
 }

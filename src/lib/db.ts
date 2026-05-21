@@ -1,63 +1,76 @@
-import Database from "better-sqlite3";
-import fs from "fs";
-import path from "path";
+import { Pool } from "pg";
 
-const DB_PATH =
-  process.env.DATABASE_PATH || path.join(process.cwd(), "data", "jq.db");
-
-function initDb(): Database.Database {
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  const db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  db.pragma("busy_timeout = 5000");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      name TEXT,
-      password_hash TEXT,
-      google_id TEXT UNIQUE,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-    CREATE TABLE IF NOT EXISTS sessions (
-      token TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      expires_at INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS assessments (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      score INTEGER NOT NULL,
-      answers TEXT NOT NULL,
-      note TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-    CREATE INDEX IF NOT EXISTS idx_assessments_user ON assessments(user_id, created_at);
-  `);
-  return db;
-}
+const CONNECTION =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  "";
 
 const globalForDb = globalThis as unknown as {
-  __jqDb?: Database.Database;
+  __jqPool?: Pool;
+  __jqSchema?: Promise<void>;
 };
 
-/** Lazily-opened SQLite connection — avoids touching the file at build time. */
-function getDb(): Database.Database {
-  if (!globalForDb.__jqDb) {
-    globalForDb.__jqDb = initDb();
+function pool(): Pool {
+  if (!globalForDb.__jqPool) {
+    globalForDb.__jqPool = new Pool({
+      connectionString: CONNECTION,
+      max: 5,
+    });
   }
-  return globalForDb.__jqDb;
+  return globalForDb.__jqPool;
 }
 
-export const db = new Proxy({} as Database.Database, {
-  get(_target, prop) {
-    const instance = getDb();
-    const value = instance[prop as keyof Database.Database];
-    return typeof value === "function"
-      ? (value as (...args: unknown[]) => unknown).bind(instance)
-      : value;
-  },
-});
+/** Create tables on first use — idempotent, runs once per process. */
+function ensureSchema(): Promise<void> {
+  if (!globalForDb.__jqSchema) {
+    globalForDb.__jqSchema = pool()
+      .query(
+        `
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          name TEXT,
+          password_hash TEXT,
+          google_id TEXT UNIQUE,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+        CREATE TABLE IF NOT EXISTS sessions (
+          token TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          expires_at TIMESTAMPTZ NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS assessments (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          score INTEGER NOT NULL,
+          answers TEXT NOT NULL,
+          note TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+        CREATE INDEX IF NOT EXISTS idx_assessments_user
+          ON assessments(user_id, created_at);
+      `,
+      )
+      .then(() => undefined);
+  }
+  return globalForDb.__jqSchema;
+}
+
+/** Run a parameterised query, returning the result rows. */
+export async function query<T = Record<string, unknown>>(
+  text: string,
+  params: unknown[] = [],
+): Promise<T[]> {
+  if (!CONNECTION) {
+    throw new Error(
+      "DATABASE_URL is not set. Add a Postgres connection string to the environment.",
+    );
+  }
+  await ensureSchema();
+  const result = await pool().query(text, params);
+  return result.rows as T[];
+}
 
 export interface UserRow {
   id: string;
@@ -65,7 +78,7 @@ export interface UserRow {
   name: string | null;
   password_hash: string | null;
   google_id: string | null;
-  created_at: string;
+  created_at: string | Date;
 }
 
 export interface AssessmentRow {
@@ -74,5 +87,5 @@ export interface AssessmentRow {
   score: number;
   answers: string;
   note: string | null;
-  created_at: string;
+  created_at: string | Date;
 }

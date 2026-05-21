@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { db, AssessmentRow } from "@/lib/db";
+import { query, AssessmentRow } from "@/lib/db";
 import { getBand } from "@/lib/questions";
 import { btnPrimary, btnPrimarySm, eyebrow } from "@/lib/ui";
 import SiteHeader from "@/components/SiteHeader";
@@ -14,8 +14,8 @@ import {
   SparkCluster,
 } from "@/components/icons";
 
-function fmtDate(iso: string, opts?: Intl.DateTimeFormatOptions) {
-  const d = new Date(iso.replace(" ", "T") + "Z");
+function fmtDate(value: string | Date, opts?: Intl.DateTimeFormatOptions) {
+  const d = new Date(value);
   return d.toLocaleDateString(
     "en-US",
     opts ?? { month: "short", day: "numeric" },
@@ -32,11 +32,10 @@ export default async function DashboardPage({
 
   const { new: newId } = await searchParams;
 
-  const rows = db
-    .prepare(
-      "SELECT * FROM assessments WHERE user_id = ? ORDER BY created_at ASC",
-    )
-    .all(user.id) as AssessmentRow[];
+  const rows = await query<AssessmentRow>(
+    "SELECT * FROM assessments WHERE user_id = $1 ORDER BY created_at ASC",
+    [user.id],
+  );
 
   const latest = rows[rows.length - 1];
   const previous = rows[rows.length - 2];
