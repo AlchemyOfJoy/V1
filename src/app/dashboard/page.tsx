@@ -6,6 +6,7 @@ import { getBand } from "@/lib/questions";
 import { btnPrimary, btnPrimarySm, eyebrow } from "@/lib/ui";
 import SiteHeader from "@/components/SiteHeader";
 import ScoreChart from "@/components/ScoreChart";
+import ScoreRubric from "@/components/ScoreRubric";
 import {
   LatestIcon,
   ChangeIcon,
@@ -166,6 +167,10 @@ export default async function DashboardPage({
                   }))}
                 />
               </div>
+            </div>
+
+            <div className="mt-12">
+              <ScoreRubric score={latest.score} />
             </div>
 
             <div className="mt-14">

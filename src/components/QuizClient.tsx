@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { QUESTIONS, getBand } from "@/lib/questions";
 import { btnPrimary, eyebrow } from "@/lib/ui";
 import { Spark } from "@/components/icons";
+import ScoreRubric from "@/components/ScoreRubric";
 
 const HOW_IT_WORKS = [
   "Ten short questions — it takes less than five minutes.",
@@ -244,7 +245,11 @@ export default function QuizClient() {
             </p>
           </div>
 
-          <ul className="mt-6 divide-y divide-navy/8 overflow-hidden rounded-xl bg-mist">
+          <div className="mt-7">
+            <ScoreRubric score={liveScore} />
+          </div>
+
+          <ul className="mt-7 divide-y divide-navy/8 overflow-hidden rounded-xl bg-mist">
             {QUESTIONS.map((q, i) => (
               <li key={q.id} className="flex items-center gap-4 px-4 py-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan/12 font-sans text-[13px] font-bold text-cyan">
