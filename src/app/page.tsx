@@ -42,9 +42,9 @@ export default async function HomePage() {
         {/* Hero */}
         <section className="px-6 pt-32 pb-32">
           <div className="mx-auto max-w-2xl animate-fade-in text-center">
-            <p className={eyebrow}>The Alchemy of Joy</p>
+            <p className={eyebrow}>Joy Quotient (JQ) Assessment</p>
             <h1 className="mt-5 font-serif text-[52px] font-medium leading-[1.05] tracking-tight text-navy sm:text-[68px]">
-              Measure what <em className="text-cyan">matters</em> most.
+              Measure what <em className="text-cyan">matters</em>.
             </h1>
             <p className="mx-auto mt-6 max-w-xl font-sans text-[18px] font-light leading-relaxed text-navy/65 sm:text-[20px]">
               Your Joy Quotient is a snapshot of how much real, felt joy is
