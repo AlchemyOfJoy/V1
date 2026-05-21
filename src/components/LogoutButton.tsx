@@ -18,7 +18,7 @@ export default function LogoutButton() {
     <button
       onClick={logout}
       disabled={loading}
-      className="text-[13px] text-ink-2 transition-colors hover:text-ink disabled:opacity-50"
+      className="font-sans text-[13px] text-navy/70 transition-colors hover:text-cyan disabled:opacity-50"
     >
       {loading ? "Signing out…" : "Sign out"}
     </button>

@@ -7,7 +7,7 @@ const W = 640;
 const H = 260;
 const PAD_L = 34;
 const PAD_R = 22;
-const PAD_T = 22;
+const PAD_T = 24;
 const PAD_B = 34;
 const MIN = 10;
 const MAX = 50;
@@ -41,8 +41,8 @@ export default function ScoreChart({ data }: { data: Point[] }) {
     >
       <defs>
         <linearGradient id="jqArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ff9500" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#ff9500" stopOpacity="0" />
+          <stop offset="0%" stopColor="#00a8e8" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#00a8e8" stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -53,7 +53,8 @@ export default function ScoreChart({ data }: { data: Point[] }) {
             x2={W - PAD_R}
             y1={y(g)}
             y2={y(g)}
-            stroke="#e8e8ed"
+            stroke="#00171f"
+            strokeOpacity="0.09"
             strokeWidth="1"
           />
           <text
@@ -61,7 +62,7 @@ export default function ScoreChart({ data }: { data: Point[] }) {
             y={y(g) + 4}
             textAnchor="end"
             fontSize="11"
-            fill="#86868b"
+            fill="#64748b"
           >
             {g}
           </text>
@@ -73,7 +74,7 @@ export default function ScoreChart({ data }: { data: Point[] }) {
         <path
           d={linePath}
           fill="none"
-          stroke="#ff9500"
+          stroke="#00a8e8"
           strokeWidth="2.5"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -93,8 +94,8 @@ export default function ScoreChart({ data }: { data: Point[] }) {
               cx={p.cx}
               cy={p.cy}
               r="4.5"
-              fill="#fff"
-              stroke="#ff9500"
+              fill="#f4efe6"
+              stroke="#00a8e8"
               strokeWidth="2.5"
             />
             <text
@@ -103,16 +104,16 @@ export default function ScoreChart({ data }: { data: Point[] }) {
               textAnchor={anchor}
               fontSize="12"
               fontWeight="600"
-              fill="#1d1d1f"
+              fill="#00171f"
             >
               {p.score}
             </text>
             <text
               x={p.cx}
-              y={H - 12}
+              y={H - 11}
               textAnchor={anchor}
               fontSize="11"
-              fill="#86868b"
+              fill="#64748b"
             >
               {p.date}
             </text>

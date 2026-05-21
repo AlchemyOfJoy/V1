@@ -9,6 +9,7 @@ function initDb(): Database.Database {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
+  db.pragma("busy_timeout = 5000");
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -40,8 +41,23 @@ const globalForDb = globalThis as unknown as {
   __jqDb?: Database.Database;
 };
 
-export const db: Database.Database =
-  globalForDb.__jqDb ?? (globalForDb.__jqDb = initDb());
+/** Lazily-opened SQLite connection — avoids touching the file at build time. */
+function getDb(): Database.Database {
+  if (!globalForDb.__jqDb) {
+    globalForDb.__jqDb = initDb();
+  }
+  return globalForDb.__jqDb;
+}
+
+export const db = new Proxy({} as Database.Database, {
+  get(_target, prop) {
+    const instance = getDb();
+    const value = instance[prop as keyof Database.Database];
+    return typeof value === "function"
+      ? (value as (...args: unknown[]) => unknown).bind(instance)
+      : value;
+  },
+});
 
 export interface UserRow {
   id: string;

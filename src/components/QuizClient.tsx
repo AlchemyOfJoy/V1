@@ -43,14 +43,14 @@ export default function QuizClient() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not save your assessment.");
+        setError(data.error ?? "Something didn't work — try again?");
         setSubmitting(false);
         return;
       }
       router.push(`/dashboard?new=${data.id}`);
       router.refresh();
     } catch {
-      setError("Network error. Please try again.");
+      setError("Something didn't work — check your connection and try again?");
       setSubmitting(false);
     }
   }
@@ -58,11 +58,12 @@ export default function QuizClient() {
   const progress = reviewing
     ? 100
     : Math.round((step / QUESTIONS.length) * 100);
+  const band = getBand(liveScore);
 
   return (
     <div>
-      <div className="mb-8">
-        <div className="flex justify-between text-[12px] font-medium text-ink-3">
+      <div className="mb-9">
+        <div className="flex justify-between font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
           <span>
             {reviewing
               ? "Review"
@@ -70,20 +71,20 @@ export default function QuizClient() {
           </span>
           <span>{progress}%</span>
         </div>
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-canvas">
+        <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-navy/10">
           <div
-            className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
+            className="h-full rounded-full bg-cyan transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
       {!reviewing && (
-        <div key={step} className="animate-rise">
-          <h2 className="text-[22px] font-semibold leading-snug tracking-tight text-ink sm:text-[26px]">
+        <div key={step} className="animate-fade-in">
+          <h2 className="font-serif text-[26px] font-medium leading-snug tracking-tight text-navy sm:text-[30px]">
             {QUESTIONS[step].text}
           </h2>
-          <div className="mt-7 space-y-2">
+          <div className="mt-8 space-y-2.5">
             {QUESTIONS[step].options.map((opt, i) => {
               const value = i + 1;
               const selected = answers[step] === value;
@@ -91,22 +92,24 @@ export default function QuizClient() {
                 <button
                   key={value}
                   onClick={() => choose(value)}
-                  className={`flex w-full items-center gap-3.5 rounded-2xl border px-4 py-3.5 text-left transition ${
+                  className={`flex w-full items-center gap-4 rounded-2xl border px-4 py-4 text-left transition ${
                     selected
-                      ? "border-accent bg-accent/[0.05]"
-                      : "border-hairline bg-white hover:bg-canvas"
+                      ? "border-cyan bg-cyan/[0.07]"
+                      : "border-navy/12 bg-bone-raised hover:border-cyan/45"
                   }`}
                 >
                   <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold transition ${
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-sans text-[13px] font-bold transition ${
                       selected
-                        ? "bg-accent text-white"
-                        : "bg-canvas text-ink-2"
+                        ? "bg-cyan text-bone"
+                        : "bg-navy/8 text-navy/55"
                     }`}
                   >
                     {value}
                   </span>
-                  <span className="text-[15px] text-ink">{opt}</span>
+                  <span className="font-sans text-[15px] text-navy">
+                    {opt}
+                  </span>
                 </button>
               );
             })}
@@ -114,47 +117,47 @@ export default function QuizClient() {
           {step > 0 && (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="mt-6 text-[13px] font-medium text-accent hover:underline"
+              className="mt-7 font-sans text-[13px] font-medium text-cyan hover:underline"
             >
-              ← Previous
+              ← Previous question
             </button>
           )}
         </div>
       )}
 
       {reviewing && (
-        <div className="animate-rise">
-          <div className="rounded-3xl bg-canvas p-8 text-center">
-            <p className="text-[13px] font-medium text-ink-3">
-              Your projected JQ score
+        <div className="animate-fade-in">
+          <div className="rounded-3xl bg-navy px-8 py-10 text-center">
+            <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan">
+              Your projected score
             </p>
-            <p className="mt-2 text-6xl font-semibold tracking-tight text-ink">
+            <p className="mt-3 font-serif text-7xl font-medium leading-none tracking-tight text-bone">
               {liveScore}
-              <span className="text-2xl font-normal text-ink-3"> / 50</span>
+              <span className="font-sans text-2xl font-normal text-bone/45">
+                {" "}
+                / 50
+              </span>
             </p>
             <p
-              className="mt-2 text-[15px] font-medium"
-              style={{ color: getBand(liveScore).color }}
+              className="mt-3 font-sans text-[14px] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: band.color }}
             >
-              {getBand(liveScore).label}
+              {band.label}
             </p>
           </div>
 
-          <ul className="mt-6 divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline">
+          <ul className="mt-6 divide-y divide-navy/10 overflow-hidden rounded-2xl border border-navy/12 bg-bone-raised">
             {QUESTIONS.map((q, i) => (
-              <li
-                key={q.id}
-                className="flex items-center gap-3.5 bg-white px-4 py-3"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-canvas text-[13px] font-semibold text-ink-2">
+              <li key={q.id} className="flex items-center gap-4 px-4 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan/12 font-sans text-[13px] font-bold text-cyan">
                   {answers[i]}
                 </span>
-                <span className="flex-1 text-[13px] leading-snug text-ink-2">
+                <span className="flex-1 font-sans text-[13px] leading-snug text-navy/70">
                   {q.text}
                 </span>
                 <button
                   onClick={() => setStep(i)}
-                  className="shrink-0 text-[13px] font-medium text-accent hover:underline"
+                  className="shrink-0 font-sans text-[12px] font-semibold uppercase tracking-[0.12em] text-cyan hover:underline"
                 >
                   Edit
                 </button>
@@ -163,21 +166,26 @@ export default function QuizClient() {
           </ul>
 
           <div className="mt-6">
-            <label className="text-[13px] font-medium text-ink">
-              Add a note <span className="text-ink-3">(optional)</span>
+            <label
+              htmlFor="note"
+              className="mb-1.5 block font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-navy/55"
+            >
+              Add a note{" "}
+              <span className="font-normal lowercase">(optional)</span>
             </label>
             <textarea
+              id="note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={500}
               rows={3}
               placeholder="What's going on in your life right now?"
-              className="mt-2 w-full resize-none rounded-xl bg-canvas px-4 py-3 text-[15px] text-ink placeholder:text-ink-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-accent/45"
+              className="w-full resize-none rounded-xl border border-navy/12 bg-bone-raised px-4 py-3 font-sans text-[15px] text-navy outline-none transition placeholder:text-navy/35 focus:border-cyan focus:ring-2 focus:ring-cyan/25"
             />
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-[13px] text-red-600">
+            <div className="mt-4 rounded-xl border border-gold/40 bg-gold/15 px-4 py-3 font-sans text-[13px] text-[#8a6d00]">
               {error}
             </div>
           )}
@@ -185,7 +193,7 @@ export default function QuizClient() {
           <button
             onClick={submit}
             disabled={submitting || !allAnswered}
-            className="mt-5 w-full rounded-xl bg-accent py-3.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-55"
+            className="mt-6 w-full rounded-full bg-cyan py-3.5 font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-bone transition-all duration-300 hover:-translate-y-0.5 hover:bg-navy disabled:pointer-events-none disabled:opacity-50"
           >
             {submitting ? "Saving…" : "Save my JQ score"}
           </button>

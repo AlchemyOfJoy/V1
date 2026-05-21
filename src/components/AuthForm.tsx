@@ -33,71 +33,97 @@ export default function AuthForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
+        setError(data.error ?? "Something didn't work — try again?");
         setLoading(false);
         return;
       }
       router.push(isSignup ? "/assessment" : "/dashboard");
       router.refresh();
     } catch {
-      setError("Network error. Please try again.");
+      setError("Something didn't work — check your connection and try again?");
       setLoading(false);
     }
   }
 
+  const label =
+    "mb-1.5 block font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-navy/55";
   const field =
-    "w-full rounded-xl bg-canvas px-4 py-3 text-[15px] text-ink placeholder:text-ink-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-accent/45";
+    "w-full rounded-xl border border-navy/12 bg-bone-raised px-4 py-3 font-sans text-[15px] text-navy outline-none transition placeholder:text-navy/35 focus:border-cyan focus:ring-2 focus:ring-cyan/25";
 
   return (
-    <div className="w-full max-w-[360px]">
-      <h1 className="text-[26px] font-semibold tracking-tight text-ink">
-        {isSignup ? "Create your account" : "Welcome back"}
+    <div className="w-full max-w-[380px] animate-fade-in">
+      <h1 className="font-serif text-[34px] font-medium leading-tight tracking-tight text-navy">
+        {isSignup ? (
+          <>
+            Create your <em className="text-cyan">account</em>
+          </>
+        ) : (
+          <>
+            Welcome <em className="text-cyan">back</em>
+          </>
+        )}
       </h1>
-      <p className="mt-1 text-[15px] text-ink-2">
+      <p className="mt-1.5 font-sans text-[15px] text-navy/60">
         {isSignup
           ? "Start tracking your joy today."
           : "Sign in to continue your joy journey."}
       </p>
 
       {error && (
-        <div className="mt-5 rounded-xl bg-red-50 px-4 py-2.5 text-[13px] text-red-600">
+        <div className="mt-6 rounded-xl border border-gold/40 bg-gold/15 px-4 py-3 font-sans text-[13px] text-[#8a6d00]">
           {error}
         </div>
       )}
 
-      <form onSubmit={submit} className="mt-6 space-y-2.5">
+      <form onSubmit={submit} className="mt-7 space-y-4">
         {isSignup && (
+          <div>
+            <label htmlFor="name" className={label}>
+              First name <span className="font-normal lowercase">(optional)</span>
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={field}
+            />
+          </div>
+        )}
+        <div>
+          <label htmlFor="email" className={label}>
+            Email
+          </label>
           <input
-            type="text"
-            placeholder="First name (optional)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            id="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className={field}
           />
-        )}
-        <input
-          type="email"
-          required
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={field}
-        />
-        <input
-          type="password"
-          required
-          placeholder={isSignup ? "Password (8+ characters)" : "Password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={field}
-        />
+        </div>
+        <div>
+          <label htmlFor="password" className={label}>
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            required
+            placeholder={isSignup ? "At least 8 characters" : ""}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={field}
+          />
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="!mt-4 w-full rounded-xl bg-accent py-3 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-55"
+          className="!mt-6 w-full rounded-full bg-cyan py-3.5 font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-bone transition-all duration-300 hover:-translate-y-0.5 hover:bg-navy disabled:pointer-events-none disabled:opacity-50"
         >
           {loading
-            ? "Please wait…"
+            ? "One moment…"
             : isSignup
               ? "Create account"
               : "Sign in"}
@@ -106,14 +132,14 @@ export default function AuthForm({
 
       {googleEnabled && (
         <>
-          <div className="my-5 flex items-center gap-3 text-[12px] text-ink-3">
-            <span className="h-px flex-1 bg-hairline" />
+          <div className="my-6 flex items-center gap-3 font-sans text-[11px] uppercase tracking-[0.18em] text-navy/40">
+            <span className="h-px flex-1 bg-navy/12" />
             or
-            <span className="h-px flex-1 bg-hairline" />
+            <span className="h-px flex-1 bg-navy/12" />
           </div>
           <a
             href="/api/auth/google"
-            className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-hairline bg-white py-3 text-[15px] font-medium text-ink transition-colors hover:bg-canvas"
+            className="flex w-full items-center justify-center gap-2.5 rounded-full border border-navy/15 bg-bone-raised py-3.5 font-sans text-[14px] font-medium text-navy transition hover:border-navy/30"
           >
             <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden>
               <path
@@ -138,18 +164,18 @@ export default function AuthForm({
         </>
       )}
 
-      <p className="mt-6 text-[13px] text-ink-2">
+      <p className="mt-7 font-sans text-[13px] text-navy/60">
         {isSignup ? (
           <>
             Already have an account?{" "}
-            <Link href="/login" className="text-accent hover:underline">
+            <Link href="/login" className="text-cyan hover:underline">
               Sign in
             </Link>
           </>
         ) : (
           <>
             New here?{" "}
-            <Link href="/signup" className="text-accent hover:underline">
+            <Link href="/signup" className="text-cyan hover:underline">
               Create an account
             </Link>
           </>
