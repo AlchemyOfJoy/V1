@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/SiteHeader";
 import QuizClient from "@/components/QuizClient";
+
+export const metadata: Metadata = {
+  title: "JQ Assessment",
+  robots: { index: false },
+};
 
 export default async function AssessmentPage() {
   const user = await getCurrentUser();

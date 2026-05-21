@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser, isGoogleEnabled } from "@/lib/auth";
 import AuthForm from "@/components/AuthForm";
 import BrandLogo from "@/components/BrandLogo";
+
+export const metadata: Metadata = {
+  title: "Create your account",
+  robots: { index: false },
+};
 
 export default async function SignupPage() {
   if (await getCurrentUser()) redirect("/dashboard");

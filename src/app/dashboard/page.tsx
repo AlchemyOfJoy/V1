@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -21,6 +22,11 @@ function fmtDate(value: string | Date, opts?: Intl.DateTimeFormatOptions) {
     opts ?? { month: "short", day: "numeric" },
   );
 }
+
+export const metadata: Metadata = {
+  title: "Your dashboard",
+  robots: { index: false },
+};
 
 export default async function DashboardPage({
   searchParams,

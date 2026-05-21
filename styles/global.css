@@ -27,6 +27,7 @@
   --font-serif: var(--font-garamond), Georgia, "Times New Roman", serif;
 
   --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-breathe: breathe 1.4s ease-in-out infinite;
 
   @keyframes fade-in {
     from {
@@ -34,6 +35,19 @@
     }
     to {
       opacity: 1;
+    }
+  }
+
+  /* The brand's "breathing dot" loading signal. */
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scale(0.82);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 }
