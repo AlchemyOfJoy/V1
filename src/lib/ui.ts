@@ -16,6 +16,7 @@ export const btnPrimarySm = `${btnBase} ${joySpark} px-5 py-2 text-[10px] bg-cya
 /** Ghost button — used on white backgrounds, pairs with the primary CTA. */
 export const btnGhostLight = `${btnBase} px-7 py-3.5 text-[10px] border border-cyan text-cyan hover:bg-cyan hover:text-white`;
 
-/** Section eyebrow label. */
+/** Section eyebrow label — cyan-deep meets WCAG AA on light backgrounds.
+ *  On navy backgrounds, override with `text-cyan` (which passes there). */
 export const eyebrow =
-  "font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan";
+  "font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan-deep";

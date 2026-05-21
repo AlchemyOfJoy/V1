@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { EB_Garamond, Raleway } from "next/font/google";
 import { SITE, siteUrl } from "@/lib/site";
+import Analytics from "@/components/Analytics";
 import "../../styles/global.css";
 
 const garamond = EB_Garamond({
@@ -68,6 +69,7 @@ export default function RootLayout({
     <html lang="en" className={`${garamond.variable} ${raleway.variable}`}>
       <body className="min-h-screen bg-white font-sans text-navy antialiased">
         {children}
+        <Analytics />
       </body>
     </html>
   );

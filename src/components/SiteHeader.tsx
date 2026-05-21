@@ -6,7 +6,7 @@ import Monogram from "./Monogram";
 import LogoutButton from "./LogoutButton";
 
 const navLink =
-  "whitespace-nowrap font-sans text-[13px] text-navy/70 transition-colors duration-150 hover:text-cyan";
+  "whitespace-nowrap font-sans text-[13px] text-navy/70 transition-colors duration-150 hover:text-cyan-deep";
 
 export default function SiteHeader({ user }: { user: PublicUser | null }) {
   return (

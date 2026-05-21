@@ -5,8 +5,16 @@ import {
   setSessionCookie,
   verifyPassword,
 } from "@/lib/auth";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  if (!(await rateLimit(`login:${clientIp(req)}`, 10, 600))) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please wait a few minutes and try again." },
+      { status: 429 },
+    );
+  }
+
   let body: { email?: string; password?: string };
   try {
     body = await req.json();

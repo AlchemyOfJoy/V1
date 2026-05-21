@@ -54,7 +54,7 @@ export default async function DashboardPage({
       <main className="mx-auto max-w-3xl px-6 py-20">
         <p className={eyebrow}>Your Progress</p>
         <h1 className="mt-3 font-serif text-[38px] font-medium tracking-tight text-navy">
-          Your joy <em className="text-cyan">journey</em>
+          Your joy <em className="text-cyan-deep">journey</em>
           {greeting}
         </h1>
 

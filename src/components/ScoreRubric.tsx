@@ -33,7 +33,7 @@ export default function ScoreRubric({ score }: { score: number }) {
                     {b.label}
                   </span>
                   {on && (
-                    <span className="flex items-center gap-1 font-sans text-[12px] font-semibold uppercase tracking-[0.06em] text-cyan">
+                    <span className="flex items-center gap-1 font-sans text-[12px] font-semibold uppercase tracking-[0.06em] text-cyan-deep">
                       <Spark size={11} />
                       Your score
                     </span>

@@ -19,11 +19,11 @@ export default function Error({
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-      <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan">
+      <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
         Something interrupted us
       </p>
       <h1 className="mt-4 font-serif text-[34px] font-medium tracking-tight text-navy">
-        That didn&apos;t quite <em className="text-cyan">work</em>.
+        That didn&apos;t quite <em className="text-cyan-deep">work</em>.
       </h1>
       <p className="mt-3 max-w-sm font-sans text-[15px] font-light text-navy/65">
         Something went wrong on our end. Your data is safe — try again, or head
