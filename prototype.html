@@ -196,6 +196,20 @@
     nav .lnk.hide-sm{display:none}
     .brand .divide,.brand .pname{display:none}
   }
+
+  .intro-body p{font-size:16px;font-weight:300;line-height:1.75;color:rgba(0,23,31,.72);margin-top:18px}
+  .intro-body p:first-child{margin-top:0}
+  .pull{font-family:"EB Garamond",serif;font-style:italic;font-size:24px;line-height:1.45;
+    color:var(--navy);text-align:center;margin:40px 0;padding:0 16px}
+  .howto{background:var(--mist);border-radius:16px;padding:30px;margin-top:8px}
+  .howto h2{font-family:"EB Garamond",serif;font-size:22px;font-weight:500}
+  .howto ul{list-style:none;margin-top:18px}
+  .howto li{display:flex;gap:12px;font-size:15px;font-weight:300;color:rgba(0,23,31,.72);
+    line-height:1.55;margin-top:12px}
+  .howto li .spark{flex-shrink:0;margin-top:1px}
+  .howto .closing{font-family:"EB Garamond",serif;font-style:italic;font-size:18px;
+    color:rgba(0,23,31,.62);margin-top:22px;line-height:1.5}
+  #intro .btn{margin-top:32px}
 </style>
 </head>
 <body>
@@ -277,6 +291,33 @@
       <input type="text" id="nameInput" placeholder="e.g. Brent" autocomplete="off" />
       <button class="btn btn-primary btn-block" onclick="signIn()">Continue</button>
     </div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen" id="intro">
+  <div class="pgwrap">
+    <div class="ass-head">
+      <span class="eyebrow">Before You Begin</span>
+      <h1 class="serif">What is your <em>Joy Quotient</em>?</h1>
+    </div>
+    <div class="intro-body" style="margin-top:28px">
+      <p>Your Joy Quotient &mdash; or JQ &mdash; is your starting line. It&rsquo;s a snapshot of how much real, felt, embodied joy is present in your life right now. Not how happy you pretend to be. Not how many accomplishments you&rsquo;ve stacked &mdash; but how much joy is truly being lived and experienced, day to day.</p>
+      <p>This idea was born in one of the hardest chapters of my life. Navigating burnout and depression, I began tracking my mental health with a clinical tool called the PHQ-9. Over time, the numbers shifted &mdash; and that visible, measurable progress made all the difference. It taught me something crucial: we need a way to measure the things that matter most. Not just our bank accounts or our body weight &mdash; but our joy.</p>
+      <p>The JQ isn&rsquo;t a clinical diagnostic. It&rsquo;s a practical way to bring awareness to how much joy is currently present in your life &mdash; and to track how it expands as you do this work. Because joy rarely arrives all at once. It&rsquo;s more like an exponential curve: slow at first, then very, very quick. Without a measurement, it&rsquo;s easy to miss how far you&rsquo;ve come.</p>
+    </div>
+    <blockquote class="pull">&ldquo;Because what gets measured gets momentum.&rdquo;</blockquote>
+    <div class="howto">
+      <h2 class="serif">How it works</h2>
+      <ul>
+        <li><span class="spark">&#10038;</span><span>Ten short questions &mdash; it takes less than five minutes.</span></li>
+        <li><span class="spark">&#10038;</span><span>For each one, choose the number that best reflects your current experience in life.</span></li>
+        <li><span class="spark">&#10038;</span><span>Your points are added up to reveal your JQ score, from 10 to 50.</span></li>
+        <li><span class="spark">&#10038;</span><span>Recommended monthly for a year, then quarterly thereafter.</span></li>
+      </ul>
+      <p class="closing">So let&rsquo;s get honest about where you are right now &mdash; not to judge it, but to witness it.</p>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="beginQuiz()">Begin the assessment</button>
   </div>
 </div>
 
@@ -409,17 +450,16 @@ document.getElementById('bandGrid').innerHTML = BANDS.map(b=>
 // ---- flow ----
 function startAssessment(){
   if(!state.name){ go('signin'); setTimeout(()=>document.getElementById('nameInput').focus(),60); return; }
-  answers = Array(10).fill(null); step = 0; editing = false;
-  go('assessment'); renderQuestion();
+  go('intro');
 }
 function signIn(){
   const v=document.getElementById('nameInput').value.trim();
   if(!v){ document.getElementById('nameInput').focus(); return; }
   state.name = v; save(state); renderNav();
-  answers = Array(10).fill(null); step = 0; editing = false;
-  go('assessment'); renderQuestion();
+  go('intro');
 }
 function signOut(){ go('landing'); }
+function beginQuiz(){ answers=Array(10).fill(null); step=0; editing=false; go('assessment'); renderQuestion(); }
 
 function renderQuestion(){
   const q=QUESTIONS[step];
