@@ -42,7 +42,15 @@ export default async function HomePage() {
         {/* Hero */}
         <section className="px-6 pt-32 pb-32">
           <div className="mx-auto max-w-2xl animate-fade-in text-center">
-            <p className={eyebrow}>Joy Quotient (JQ) Assessment</p>
+            <div className="flex items-center justify-center gap-3 sm:gap-5">
+              <Spark size={16} className="shrink-0 sm:hidden" />
+              <Spark size={22} className="hidden shrink-0 sm:block" />
+              <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.2em] text-cyan sm:text-[18px] sm:tracking-[0.3em]">
+                Joy Quotient (JQ) Assessment
+              </p>
+              <Spark size={16} className="shrink-0 sm:hidden" />
+              <Spark size={22} className="hidden shrink-0 sm:block" />
+            </div>
             <h1 className="mt-5 font-serif text-[52px] font-medium leading-[1.05] tracking-tight text-navy sm:text-[68px]">
               Measure what <em className="text-cyan">matters</em>.
             </h1>
