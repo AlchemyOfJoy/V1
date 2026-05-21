@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { QUESTIONS, getBand } from "@/lib/questions";
 import { btnPrimary, eyebrow } from "@/lib/ui";
+import { track } from "@/lib/analytics";
 import { Spark } from "@/components/icons";
 import ScoreRubric from "@/components/ScoreRubric";
 
@@ -64,6 +65,7 @@ export default function QuizClient() {
         setSubmitting(false);
         return;
       }
+      track("assessment_completed", { score: liveScore });
       router.push(`/dashboard?new=${data.id}`);
       router.refresh();
     } catch {
@@ -78,7 +80,7 @@ export default function QuizClient() {
       <div className="animate-fade-in">
         <p className={eyebrow}>Before You Begin</p>
         <h1 className="mt-3 font-serif text-[38px] font-medium leading-tight tracking-tight text-navy">
-          What is your <em className="text-cyan">Joy Quotient</em>?
+          What is your <em className="text-cyan-deep">Joy Quotient</em>?
         </h1>
 
         <div className="mt-7 space-y-4 font-sans text-[16px] font-light leading-[1.75] text-navy/75">
@@ -135,7 +137,10 @@ export default function QuizClient() {
         </div>
 
         <button
-          onClick={() => setStarted(true)}
+          onClick={() => {
+            setStarted(true);
+            track("assessment_started");
+          }}
           className={`${btnPrimary} mt-8 w-full`}
         >
           Begin the assessment
@@ -155,7 +160,7 @@ export default function QuizClient() {
       <div className="mb-9">
         <p className={eyebrow}>The Assessment</p>
         <h1 className="mt-3 font-serif text-[34px] font-medium tracking-tight text-navy">
-          Measure your <em className="text-cyan">joy</em>
+          Measure your <em className="text-cyan-deep">joy</em>
         </h1>
       </div>
 
@@ -214,7 +219,7 @@ export default function QuizClient() {
           {step > 0 && (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="mt-7 font-sans text-[13px] font-medium text-cyan transition-colors duration-150 hover:text-navy"
+              className="mt-7 font-sans text-[13px] font-medium text-cyan-deep transition-colors duration-150 hover:text-navy"
             >
               ← Previous question
             </button>
@@ -252,7 +257,7 @@ export default function QuizClient() {
           <ul className="mt-7 divide-y divide-navy/8 overflow-hidden rounded-xl bg-mist">
             {QUESTIONS.map((q, i) => (
               <li key={q.id} className="flex items-center gap-4 px-4 py-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan/12 font-sans text-[13px] font-bold text-cyan">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan/12 font-sans text-[13px] font-bold text-cyan-deep">
                   {answers[i]}
                 </span>
                 <span className="flex-1 font-sans text-[13px] leading-snug text-navy/70">
@@ -263,7 +268,7 @@ export default function QuizClient() {
                     setEditing(true);
                     setStep(i);
                   }}
-                  className="shrink-0 font-sans text-[12px] font-semibold uppercase tracking-[0.12em] text-cyan transition-colors duration-150 hover:text-navy"
+                  className="shrink-0 font-sans text-[12px] font-semibold uppercase tracking-[0.12em] text-cyan-deep transition-colors duration-150 hover:text-navy"
                 >
                   Edit
                 </button>

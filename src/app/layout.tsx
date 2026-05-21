@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { EB_Garamond, Raleway } from "next/font/google";
+import { SITE, siteUrl } from "@/lib/site";
+import Analytics from "@/components/Analytics";
 import "../../styles/global.css";
 
 const garamond = EB_Garamond({
@@ -17,15 +19,45 @@ const raleway = Raleway({
   display: "swap",
 });
 
+const title = `${SITE.name} · ${SITE.author}`;
+
 export const metadata: Metadata = {
-  title: "Joy Quotient · The Alchemy of Joy",
-  description:
-    "Measure your Joy Quotient, save your score, and track how your joy grows over time.",
+  metadataBase: new URL(siteUrl()),
+  title: {
+    default: title,
+    template: `%s · ${SITE.shortName}`,
+  },
+  description: SITE.description,
+  applicationName: SITE.name,
+  authors: [{ name: SITE.author }],
+  keywords: [
+    "Joy Quotient",
+    "JQ assessment",
+    "joy",
+    "wellbeing",
+    "self-assessment",
+    "Brent Freeman",
+    "The Alchemy of Joy",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: SITE.name,
+    title,
+    description: SITE.description,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description: SITE.description,
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -37,6 +69,7 @@ export default function RootLayout({
     <html lang="en" className={`${garamond.variable} ${raleway.variable}`}>
       <body className="min-h-screen bg-white font-sans text-navy antialiased">
         {children}
+        <Analytics />
       </body>
     </html>
   );

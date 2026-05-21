@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -21,6 +22,11 @@ function fmtDate(value: string | Date, opts?: Intl.DateTimeFormatOptions) {
     opts ?? { month: "short", day: "numeric" },
   );
 }
+
+export const metadata: Metadata = {
+  title: "Your dashboard",
+  robots: { index: false },
+};
 
 export default async function DashboardPage({
   searchParams,
@@ -48,7 +54,7 @@ export default async function DashboardPage({
       <main className="mx-auto max-w-3xl px-6 py-20">
         <p className={eyebrow}>Your Progress</p>
         <h1 className="mt-3 font-serif text-[38px] font-medium tracking-tight text-navy">
-          Your joy <em className="text-cyan">journey</em>
+          Your joy <em className="text-cyan-deep">journey</em>
           {greeting}
         </h1>
 

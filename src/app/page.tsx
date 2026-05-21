@@ -42,9 +42,17 @@ export default async function HomePage() {
         {/* Hero */}
         <section className="px-6 pt-32 pb-32">
           <div className="mx-auto max-w-2xl animate-fade-in text-center">
-            <p className={eyebrow}>Joy Quotient (JQ) Assessment</p>
+            <div className="flex items-center justify-center gap-3 sm:gap-5">
+              <Spark size={16} className="shrink-0 sm:hidden" />
+              <Spark size={22} className="hidden shrink-0 sm:block" />
+              <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.2em] text-cyan-deep sm:text-[18px] sm:tracking-[0.3em]">
+                Joy Quotient (JQ) Assessment
+              </p>
+              <Spark size={16} className="shrink-0 sm:hidden" />
+              <Spark size={22} className="hidden shrink-0 sm:block" />
+            </div>
             <h1 className="mt-5 font-serif text-[52px] font-medium leading-[1.05] tracking-tight text-navy sm:text-[68px]">
-              Measure what <em className="text-cyan">matters</em>.
+              Measure what <em className="text-cyan-deep">matters</em>.
             </h1>
             <p className="mx-auto mt-6 max-w-xl font-sans text-[18px] font-light leading-relaxed text-navy/65 sm:text-[20px]">
               Your Joy Quotient is a snapshot of how much real, felt joy is
@@ -68,7 +76,9 @@ export default async function HomePage() {
         <section className="bg-navy px-6 py-32">
           <div className="mx-auto max-w-5xl">
             <div className="text-center">
-              <p className={eyebrow}>The Practice</p>
+              <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan">
+                The Practice
+              </p>
               <h2 className="mt-4 font-serif text-[38px] font-medium tracking-tight text-white sm:text-[46px]">
                 A simple <em className="text-cyan">practice</em>
               </h2>
@@ -100,7 +110,7 @@ export default async function HomePage() {
             <div className="text-center">
               <p className={eyebrow}>Your Results</p>
               <h2 className="mt-4 font-serif text-[38px] font-medium tracking-tight text-navy sm:text-[46px]">
-                What your score <em className="text-cyan">means</em>
+                What your score <em className="text-cyan-deep">means</em>
               </h2>
               <p className="mx-auto mt-4 max-w-md font-sans text-[15px] font-light text-navy/60">
                 No score is a finish line — and none is a judgment. It&apos;s
@@ -132,7 +142,9 @@ export default async function HomePage() {
         <section className="bg-navy px-6 py-32 text-center">
           <div className="mx-auto max-w-xl">
             <TripleSparkle className="mb-6" />
-            <p className={eyebrow}>Begin</p>
+            <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan">
+              Begin
+            </p>
             <h2 className="mt-4 font-serif text-[38px] font-medium leading-tight tracking-tight text-white sm:text-[46px]">
               Joy is not a feeling.
               <br />

@@ -6,10 +6,18 @@ import {
   hashPassword,
   setSessionCookie,
 } from "@/lib/auth";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
+  if (!(await rateLimit(`signup:${clientIp(req)}`, 8, 900))) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please wait a few minutes and try again." },
+      { status: 429 },
+    );
+  }
+
   let body: { email?: string; password?: string; name?: string };
   try {
     body = await req.json();

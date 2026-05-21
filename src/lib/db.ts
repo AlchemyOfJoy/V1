@@ -49,6 +49,13 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_assessments_user
      ON assessments(user_id, created_at)`,
+  `CREATE TABLE IF NOT EXISTS rate_limits (
+     id BIGSERIAL PRIMARY KEY,
+     bucket TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_rate_limits_bucket
+     ON rate_limits(bucket, created_at)`,
 ];
 
 /** Create tables on first use — idempotent, runs once per process.

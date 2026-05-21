@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { btnPrimary } from "@/lib/ui";
+import { track } from "@/lib/analytics";
 
 export default function AuthForm({
   mode,
@@ -38,6 +39,7 @@ export default function AuthForm({
         setLoading(false);
         return;
       }
+      track(isSignup ? "sign_up" : "login", { method: "email" });
       router.push(isSignup ? "/assessment" : "/dashboard");
       router.refresh();
     } catch {
@@ -56,11 +58,11 @@ export default function AuthForm({
       <h1 className="font-serif text-[34px] font-medium leading-tight tracking-tight text-navy">
         {isSignup ? (
           <>
-            Create your <em className="text-cyan">account</em>
+            Create your <em className="text-cyan-deep">account</em>
           </>
         ) : (
           <>
-            Welcome <em className="text-cyan">back</em>
+            Welcome <em className="text-cyan-deep">back</em>
           </>
         )}
       </h1>
@@ -173,7 +175,7 @@ export default function AuthForm({
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-medium text-navy underline decoration-navy/30 underline-offset-2 transition-colors duration-150 hover:text-cyan hover:decoration-cyan"
+              className="font-medium text-navy underline decoration-navy/30 underline-offset-2 transition-colors duration-150 hover:text-cyan-deep hover:decoration-cyan-deep"
             >
               Sign in
             </Link>
@@ -183,7 +185,7 @@ export default function AuthForm({
             New here?{" "}
             <Link
               href="/signup"
-              className="font-medium text-navy underline decoration-navy/30 underline-offset-2 transition-colors duration-150 hover:text-cyan hover:decoration-cyan"
+              className="font-medium text-navy underline decoration-navy/30 underline-offset-2 transition-colors duration-150 hover:text-cyan-deep hover:decoration-cyan-deep"
             >
               Create an account
             </Link>

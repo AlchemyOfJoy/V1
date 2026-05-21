@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser, isGoogleEnabled } from "@/lib/auth";
 import AuthForm from "@/components/AuthForm";
 import BrandLogo from "@/components/BrandLogo";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false },
+};
 
 const ERRORS: Record<string, string> = {
   google_unavailable: "Google sign-in isn't set up on this server.",
