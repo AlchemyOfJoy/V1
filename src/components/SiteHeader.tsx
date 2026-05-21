@@ -1,15 +1,16 @@
 import Link from "next/link";
 import type { PublicUser } from "@/lib/auth";
-import Monogram from "./Monogram";
+import BrandLogo from "./BrandLogo";
 import LogoutButton from "./LogoutButton";
 
 export default function SiteHeader({ user }: { user: PublicUser | null }) {
   return (
     <header className="sticky top-0 z-50 border-b border-navy/10 bg-bone/85 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5 text-navy">
-          <Monogram size={22} />
-          <span className="font-serif text-[19px] font-medium tracking-tight">
+        <Link href="/" className="flex items-center gap-3 text-navy">
+          <BrandLogo variant="navy" priority className="h-[21px] w-auto" />
+          <span className="hidden h-5 w-px bg-navy/20 sm:block" />
+          <span className="hidden font-serif text-[17px] font-medium tracking-tight sm:block">
             Joy Quotient
           </span>
         </Link>

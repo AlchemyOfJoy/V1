@@ -154,7 +154,7 @@ export default async function HomePage() {
           <p className="font-sans text-[12px] text-navy/45">
             Joy Quotient Assessment · The Alchemy of Joy by Brent Freeman
           </p>
-          <Monogram size={26} className="text-navy/40" />
+          <Monogram variant="navy" className="h-7 w-auto opacity-45" />
         </div>
       </footer>
     </>
