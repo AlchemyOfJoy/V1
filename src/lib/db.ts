@@ -6,6 +6,8 @@ const CONNECTION =
   process.env.POSTGRES_PRISMA_URL ||
   "";
 
+const IS_LOCAL = /localhost|127\.0\.0\.1/.test(CONNECTION);
+
 const globalForDb = globalThis as unknown as {
   __jqPool?: Pool;
   __jqSchema?: Promise<void>;
@@ -15,44 +17,53 @@ function pool(): Pool {
   if (!globalForDb.__jqPool) {
     globalForDb.__jqPool = new Pool({
       connectionString: CONNECTION,
-      max: 5,
+      // Hosted Postgres (Neon, etc.) requires SSL; local Postgres does not.
+      ssl: IS_LOCAL ? undefined : { rejectUnauthorized: false },
+      max: 3,
     });
   }
   return globalForDb.__jqPool;
 }
 
-/** Create tables on first use — idempotent, runs once per process. */
+const SCHEMA = [
+  `CREATE TABLE IF NOT EXISTS users (
+     id TEXT PRIMARY KEY,
+     email TEXT UNIQUE NOT NULL,
+     name TEXT,
+     password_hash TEXT,
+     google_id TEXT UNIQUE,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE TABLE IF NOT EXISTS sessions (
+     token TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     expires_at TIMESTAMPTZ NOT NULL
+   )`,
+  `CREATE TABLE IF NOT EXISTS assessments (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     score INTEGER NOT NULL,
+     answers TEXT NOT NULL,
+     note TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_assessments_user
+     ON assessments(user_id, created_at)`,
+];
+
+/** Create tables on first use — idempotent, runs once per process.
+ *  Each statement runs separately so it works through any connection pooler.
+ *  A failed run is not cached, so the next request retries. */
 function ensureSchema(): Promise<void> {
   if (!globalForDb.__jqSchema) {
-    globalForDb.__jqSchema = pool()
-      .query(
-        `
-        CREATE TABLE IF NOT EXISTS users (
-          id TEXT PRIMARY KEY,
-          email TEXT UNIQUE NOT NULL,
-          name TEXT,
-          password_hash TEXT,
-          google_id TEXT UNIQUE,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-        );
-        CREATE TABLE IF NOT EXISTS sessions (
-          token TEXT PRIMARY KEY,
-          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          expires_at TIMESTAMPTZ NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS assessments (
-          id TEXT PRIMARY KEY,
-          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          score INTEGER NOT NULL,
-          answers TEXT NOT NULL,
-          note TEXT,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-        );
-        CREATE INDEX IF NOT EXISTS idx_assessments_user
-          ON assessments(user_id, created_at);
-      `,
-      )
-      .then(() => undefined);
+    globalForDb.__jqSchema = (async () => {
+      for (const stmt of SCHEMA) {
+        await pool().query(stmt);
+      }
+    })().catch((err) => {
+      globalForDb.__jqSchema = undefined;
+      throw err;
+    });
   }
   return globalForDb.__jqSchema;
 }
@@ -64,12 +75,22 @@ export async function query<T = Record<string, unknown>>(
 ): Promise<T[]> {
   if (!CONNECTION) {
     throw new Error(
-      "DATABASE_URL is not set. Add a Postgres connection string to the environment.",
+      "No database connection string found. Set DATABASE_URL (or POSTGRES_URL) in the environment.",
     );
   }
   await ensureSchema();
-  const result = await pool().query(text, params);
-  return result.rows as T[];
+  try {
+    const result = await pool().query(text, params);
+    return result.rows as T[];
+  } catch (err) {
+    console.error(
+      "[db] query failed:",
+      (err as Error).message,
+      "::",
+      text.replace(/\s+/g, " ").trim().slice(0, 80),
+    );
+    throw err;
+  }
 }
 
 export interface UserRow {
