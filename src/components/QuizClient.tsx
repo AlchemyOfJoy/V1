@@ -3,15 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { QUESTIONS, getBand } from "@/lib/questions";
-import { btnPrimary } from "@/lib/ui";
+import { btnPrimary, eyebrow } from "@/lib/ui";
 import { Spark } from "@/components/icons";
+
+const HOW_IT_WORKS = [
+  "Ten short questions — it takes less than five minutes.",
+  "For each one, choose the number that best reflects your current experience in life.",
+  "Your points are added up to reveal your JQ score, from 10 to 50.",
+  "Recommended monthly for a year, then quarterly thereafter.",
+];
 
 export default function QuizClient() {
   const router = useRouter();
+  const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>(
     Array(QUESTIONS.length).fill(null),
   );
   const [step, setStep] = useState(0);
+  const [editing, setEditing] = useState(false);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +39,12 @@ export default function QuizClient() {
       next[step] = value;
       return next;
     });
-    setStep((s) => Math.min(s + 1, QUESTIONS.length));
+    if (editing) {
+      setEditing(false);
+      setStep(QUESTIONS.length);
+    } else {
+      setStep((s) => Math.min(s + 1, QUESTIONS.length));
+    }
   }
 
   async function submit() {
@@ -57,6 +71,79 @@ export default function QuizClient() {
     }
   }
 
+  // ---- Intro ----
+  if (!started) {
+    return (
+      <div className="animate-fade-in">
+        <p className={eyebrow}>Before You Begin</p>
+        <h1 className="mt-3 font-serif text-[38px] font-medium leading-tight tracking-tight text-navy">
+          What is your <em className="text-cyan">Joy Quotient</em>?
+        </h1>
+
+        <div className="mt-7 space-y-4 font-sans text-[16px] font-light leading-[1.75] text-navy/75">
+          <p>
+            Your Joy Quotient — or JQ — is your starting line. It&apos;s a
+            snapshot of how much real, felt, embodied joy is present in your
+            life right now. Not how happy you pretend to be. Not how many
+            accomplishments you&apos;ve stacked — but how much joy is truly
+            being lived and experienced, day to day.
+          </p>
+          <p>
+            This idea was born in one of the hardest chapters of my life.
+            Navigating burnout and depression, I began tracking my mental
+            health with a clinical tool called the PHQ-9. Over time, the
+            numbers shifted — and that visible, measurable progress made all
+            the difference. It taught me something crucial: we need a way to
+            measure the things that matter most. Not just our bank accounts or
+            our body weight — but our joy.
+          </p>
+          <p>
+            The JQ isn&apos;t a clinical diagnostic. It&apos;s a practical way
+            to bring awareness to how much joy is currently present in your
+            life — and to track how it expands as you do this work. Because joy
+            rarely arrives all at once. It&apos;s more like an exponential
+            curve: slow at first, then very, very quick. Without a measurement,
+            it&apos;s easy to miss how far you&apos;ve come.
+          </p>
+        </div>
+
+        <blockquote className="my-10 text-center font-serif text-[24px] italic leading-snug text-navy">
+          &ldquo;Because what gets measured gets momentum.&rdquo;
+        </blockquote>
+
+        <div className="rounded-2xl bg-mist p-8">
+          <h2 className="font-serif text-[22px] font-medium text-navy">
+            How it works
+          </h2>
+          <ul className="mt-5 space-y-3">
+            {HOW_IT_WORKS.map((item) => (
+              <li key={item} className="flex gap-3">
+                <span className="mt-0.5 shrink-0">
+                  <Spark size={13} />
+                </span>
+                <span className="font-sans text-[15px] font-light leading-relaxed text-navy/75">
+                  {item}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 font-serif text-[18px] italic leading-relaxed text-navy/65">
+            So let&apos;s get honest about where you are right now — not to
+            judge it, but to witness it.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setStarted(true)}
+          className={`${btnPrimary} mt-8 w-full`}
+        >
+          Begin the assessment
+        </button>
+      </div>
+    );
+  }
+
+  // ---- Quiz / Review ----
   const progress = reviewing
     ? 100
     : Math.round((step / QUESTIONS.length) * 100);
@@ -64,7 +151,14 @@ export default function QuizClient() {
 
   return (
     <div>
-      <div className="mb-10">
+      <div className="mb-9">
+        <p className={eyebrow}>The Assessment</p>
+        <h1 className="mt-3 font-serif text-[34px] font-medium tracking-tight text-navy">
+          Measure your <em className="text-cyan">joy</em>
+        </h1>
+      </div>
+
+      <div className="mb-9">
         <div className="flex justify-between font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
           <span>
             {reviewing
@@ -160,7 +254,10 @@ export default function QuizClient() {
                   {q.text}
                 </span>
                 <button
-                  onClick={() => setStep(i)}
+                  onClick={() => {
+                    setEditing(true);
+                    setStep(i);
+                  }}
                   className="shrink-0 font-sans text-[12px] font-semibold uppercase tracking-[0.12em] text-cyan transition-colors duration-150 hover:text-navy"
                 >
                   Edit
