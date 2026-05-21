@@ -4,32 +4,28 @@ import { BANDS } from "@/lib/questions";
 import { btnPrimary, btnGhostLight, eyebrow } from "@/lib/ui";
 import SiteHeader from "@/components/SiteHeader";
 import Monogram from "@/components/Monogram";
+import {
+  AssessmentIcon,
+  SaveIcon,
+  GrowthIcon,
+  Spark,
+} from "@/components/icons";
 
 const FEATURES = [
   {
     title: "Take the assessment",
     body: "Ten honest questions about presence, gratitude, and joy — five minutes, start to finish.",
-    icon: (
-      <path
-        d="M9 11l3 3 7-7M5 12v7a1 1 0 001 1h12a1 1 0 001-1v-7M5 8V5a1 1 0 011-1h8"
-        strokeWidth="1.5"
-      />
-    ),
+    Icon: AssessmentIcon,
   },
   {
     title: "Save every score",
     body: "Each check-in is stored securely to your account, building an honest record over time.",
-    icon: (
-      <path
-        d="M6 4h12a1 1 0 011 1v15l-7-4-7 4V5a1 1 0 011-1z"
-        strokeWidth="1.5"
-      />
-    ),
+    Icon: SaveIcon,
   },
   {
     title: "Watch the curve rise",
     body: "See your joy trend month over month. What gets measured gets momentum.",
-    icon: <path d="M4 18l5-6 4 3 7-9M15 6h5v5" strokeWidth="1.5" />,
+    Icon: GrowthIcon,
   },
 ];
 
@@ -77,20 +73,13 @@ export default async function HomePage() {
               </h2>
             </div>
             <div className="mt-16 grid gap-12 sm:grid-cols-3">
-              {FEATURES.map((f) => (
+              {FEATURES.map((f, i) => (
                 <div key={f.title}>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan/30 text-cyan">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      {f.icon}
-                    </svg>
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan/25 bg-cyan/10 text-cyan">
+                    <f.Icon size={26} />
+                    <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-cyan ring-1 ring-cyan/30">
+                      {i + 1}
+                    </span>
                   </div>
                   <h3 className="mt-5 font-serif text-[22px] font-medium text-bone">
                     {f.title}
@@ -123,11 +112,8 @@ export default async function HomePage() {
                   key={b.label}
                   className="rounded-2xl border border-navy/12 bg-bone-raised p-6"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: b.color }}
-                    />
+                  <div className="flex items-center gap-2">
+                    <Spark size={16} color={b.color} />
                     <h3 className="font-sans text-[13px] font-bold uppercase tracking-[0.14em] text-navy">
                       {b.label}
                     </h3>

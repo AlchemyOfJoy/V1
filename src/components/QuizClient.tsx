@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { QUESTIONS, getBand } from "@/lib/questions";
+import { Spark } from "@/components/icons";
 
 export default function QuizClient() {
   const router = useRouter();
@@ -139,10 +140,12 @@ export default function QuizClient() {
               </span>
             </p>
             <p
-              className="mt-3 font-sans text-[14px] font-semibold uppercase tracking-[0.16em]"
+              className="mt-3 flex items-center justify-center gap-2 font-sans text-[14px] font-semibold uppercase tracking-[0.16em]"
               style={{ color: band.color }}
             >
+              <Spark size={14} color={band.color} />
               {band.label}
+              <Spark size={14} color={band.color} />
             </p>
           </div>
 

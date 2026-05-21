@@ -6,6 +6,12 @@ import { getBand } from "@/lib/questions";
 import { btnPrimary, eyebrow } from "@/lib/ui";
 import SiteHeader from "@/components/SiteHeader";
 import ScoreChart from "@/components/ScoreChart";
+import {
+  LatestIcon,
+  ChangeIcon,
+  CheckinsIcon,
+  SparkCluster,
+} from "@/components/icons";
 
 function fmtDate(iso: string, opts?: Intl.DateTimeFormatOptions) {
   const d = new Date(iso.replace(" ", "T") + "Z");
@@ -48,7 +54,8 @@ export default async function DashboardPage({
 
         {rows.length === 0 ? (
           <div className="mt-10 rounded-3xl bg-navy px-8 py-16 text-center">
-            <h2 className="font-serif text-[26px] font-medium tracking-tight text-bone">
+            <SparkCluster className="mx-auto" />
+            <h2 className="mt-4 font-serif text-[26px] font-medium tracking-tight text-bone">
               Set your <em className="text-cyan">starting line</em>
             </h2>
             <p className="mx-auto mt-3 max-w-sm font-sans text-[15px] leading-relaxed text-bone/60">
@@ -85,9 +92,12 @@ export default async function DashboardPage({
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-navy/12 bg-bone-raised p-6">
-                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
-                  Latest JQ
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
+                    Latest JQ
+                  </p>
+                  <LatestIcon size={20} className="text-cyan/55" />
+                </div>
                 <p className="mt-3 font-serif text-[44px] font-medium leading-none tracking-tight text-navy">
                   {latest.score}
                   <span className="font-sans text-[16px] font-normal text-navy/40">
@@ -103,9 +113,12 @@ export default async function DashboardPage({
                 </p>
               </div>
               <div className="rounded-2xl border border-navy/12 bg-bone-raised p-6">
-                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
-                  Change
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
+                    Change
+                  </p>
+                  <ChangeIcon size={20} className="text-cyan/55" />
+                </div>
                 <p
                   className="mt-3 font-serif text-[44px] font-medium leading-none tracking-tight"
                   style={{
@@ -134,9 +147,12 @@ export default async function DashboardPage({
                 </p>
               </div>
               <div className="rounded-2xl border border-navy/12 bg-bone-raised p-6">
-                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
-                  Check-ins
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/45">
+                    Check-ins
+                  </p>
+                  <CheckinsIcon size={20} className="text-cyan/55" />
+                </div>
                 <p className="mt-3 font-serif text-[44px] font-medium leading-none tracking-tight text-navy">
                   {rows.length}
                 </p>
