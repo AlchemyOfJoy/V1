@@ -210,6 +210,17 @@
   .howto .closing{font-family:"EB Garamond",serif;font-style:italic;font-size:18px;
     color:rgba(0,23,31,.62);margin-top:22px;line-height:1.5}
   #intro .btn{margin-top:32px}
+
+  .rubric{margin-top:26px}
+  .rubric-h{font-size:19px;font-weight:500;margin-bottom:14px}
+  .rb{display:flex;gap:16px;padding:15px 16px;border-radius:12px;
+    border:1px solid rgba(0,23,31,.1);margin-top:8px}
+  .rb.on{border-color:var(--cyan);background:rgba(0,168,232,.05)}
+  .rb-range{font-family:"EB Garamond",serif;font-size:19px;font-weight:600;
+    color:var(--navy);flex-shrink:0;width:58px}
+  .rb-label{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .rb-you{color:var(--cyan);margin-left:8px;letter-spacing:.06em}
+  .rb-sum{font-size:13px;font-weight:300;color:rgba(0,23,31,.65);margin-top:5px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -483,6 +494,18 @@ function choose(v){
 }
 function prevQ(){ if(step>0){ step--; renderQuestion(); } }
 
+function rubricHTML(score){
+  const cur=bandFor(score);
+  let h='<div class="rubric"><h3 class="rubric-h serif">What your score means</h3>';
+  BANDS.forEach(b=>{
+    const on=(b.label===cur.label);
+    h+='<div class="rb'+(on?' on':'')+'"><div class="rb-range">'+b.min+'\u2013'+b.max+'</div>'+
+       '<div><div class="rb-label" style="color:'+b.color+'">'+b.label+
+       (on?'<span class="rb-you"><span class="spark">&#10038;</span> Your score</span>':'')+
+       '</div><div class="rb-sum">'+b.summary+'</div></div></div>';
+  });
+  return h+'</div>';
+}
 function renderReview(){
   go('review');
   const score=answers.reduce((a,b)=>a+(b||0),0);
@@ -490,6 +513,7 @@ function renderReview(){
   let h='<div class="scorecard"><div class="lab">Your projected score</div>'+
     '<div class="big serif">'+score+'<span> / 50</span></div>'+
     '<div class="bnd" style="color:'+band.color+'">'+SP+band.label+SP+'</div></div>';
+  h+=rubricHTML(score);
   h+='<div class="ans-list">';
   QUESTIONS.forEach((q,i)=>{
     h+='<div class="ans-row"><span class="n">'+answers[i]+'</span>'+
