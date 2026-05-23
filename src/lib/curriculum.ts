@@ -107,7 +107,7 @@ export const MODULES: Module[] = [
     italicWord: "Forgiveness",
     subtitle:
       "Release the weight you've been carrying — privately, fully, and on your own terms.",
-    status: "coming-soon",
+    status: "available",
     workbookPage: "p. 39–46",
     sections: [],
   },
