@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  let body: { answers?: unknown; note?: unknown };
+  let body: { answers?: unknown; note?: unknown; context?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -31,14 +31,26 @@ export async function POST(req: NextRequest) {
 
   const note =
     typeof body.note === "string" ? body.note.trim().slice(0, 500) : null;
+  const VALID_CONTEXTS = new Set([
+    "baseline",
+    "month_1",
+    "month_2",
+    "month_3",
+    "final",
+    "ad_hoc",
+  ]);
+  const context =
+    typeof body.context === "string" && VALID_CONTEXTS.has(body.context)
+      ? body.context
+      : "ad_hoc";
   const score = (answers as number[]).reduce((sum, a) => sum + a, 0);
   const id = randomUUID();
 
   try {
     await query(
-      `INSERT INTO assessments (id, user_id, score, answers, note)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [id, user.id, score, JSON.stringify(answers), note || null],
+      `INSERT INTO assessments (id, user_id, score, answers, note, context)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [id, user.id, score, JSON.stringify(answers), note || null, context],
     );
     return NextResponse.json({ id, score });
   } catch (err) {

@@ -56,6 +56,98 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_rate_limits_bucket
      ON rate_limits(bucket, created_at)`,
+
+  // --- Curriculum tables (Alchemy of Joy) ---
+  `CREATE TABLE IF NOT EXISTS worksheet_responses (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     worksheet_id TEXT NOT NULL,
+     data JSONB NOT NULL DEFAULT '{}'::jsonb,
+     completed_at TIMESTAMPTZ,
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     UNIQUE (user_id, worksheet_id)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_worksheet_responses_user
+     ON worksheet_responses(user_id, worksheet_id)`,
+  `CREATE TABLE IF NOT EXISTS module_progress (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     module_id TEXT NOT NULL,
+     section_id TEXT,
+     status TEXT NOT NULL DEFAULT 'not_started',
+     started_at TIMESTAMPTZ,
+     completed_at TIMESTAMPTZ,
+     UNIQUE (user_id, module_id, section_id)
+   )`,
+  `CREATE TABLE IF NOT EXISTS list_of_joy_items (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     content TEXT NOT NULL,
+     priority_pillar TEXT,
+     sub_pillar TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_list_of_joy_user
+     ON list_of_joy_items(user_id, created_at)`,
+  `CREATE TABLE IF NOT EXISTS journal_entries (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     worksheet_id TEXT,
+     title TEXT,
+     body TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE TABLE IF NOT EXISTS forgiveness_subjects (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     subject_name TEXT NOT NULL,
+     victim_rant TEXT,
+     empath_rave TEXT,
+     universal_meaning TEXT,
+     forgiveness_statement TEXT,
+     completed_at TIMESTAMPTZ,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE TABLE IF NOT EXISTS priority_pillar_snapshots (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     taken_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     love_self INT, love_romantic INT,
+     faith_self INT, faith_universe INT,
+     health_mind INT, health_body INT,
+     family_blood INT, family_chosen INT,
+     career_money INT, career_giving_back INT,
+     community_personal INT, community_professional INT
+   )`,
+  `CREATE TABLE IF NOT EXISTS subscripts (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     target_date DATE,
+     manifestations JSONB NOT NULL DEFAULT '[]'::jsonb,
+     affirmations JSONB NOT NULL DEFAULT '[]'::jsonb,
+     emotion_anchor TEXT,
+     version INT NOT NULL DEFAULT 1,
+     is_active BOOLEAN NOT NULL DEFAULT true,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE TABLE IF NOT EXISTS challenge_checkins (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     day_number INT NOT NULL,
+     checked_in_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     subscript_morning_done BOOLEAN NOT NULL DEFAULT false,
+     subscript_evening_done BOOLEAN NOT NULL DEFAULT false,
+     weekly_focus_action TEXT,
+     reflection TEXT,
+     mood_rating INT,
+     UNIQUE (user_id, day_number)
+   )`,
+  // Additive column migrations — safe and idempotent
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_started_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_completed_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_started_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_current_day INT`,
+  `ALTER TABLE assessments ADD COLUMN IF NOT EXISTS context TEXT`,
 ];
 
 /** Create tables on first use — idempotent, runs once per process.

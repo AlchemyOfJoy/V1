@@ -13,7 +13,7 @@ export default function SiteHeader({ user }: { user: PublicUser | null }) {
     <header className="sticky top-0 z-50 border-b border-navy/10 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link
-          href={user ? "/dashboard" : "/"}
+          href={user ? "/curriculum" : "/"}
           className="flex items-center gap-2.5 text-navy sm:gap-3"
         >
           {/* Compact monogram on mobile, full wordmark on larger screens */}
@@ -31,9 +31,9 @@ export default function SiteHeader({ user }: { user: PublicUser | null }) {
         <nav className="flex items-center gap-4 sm:gap-7">
           {user ? (
             <>
-              {/* Redundant on mobile — the logo links to the dashboard */}
+              {/* Logo goes to /curriculum when signed in; this links the JQ history view */}
               <Link href="/dashboard" className={`hidden sm:inline ${navLink}`}>
-                Dashboard
+                JQ History
               </Link>
               <LogoutButton />
               <Link href="/assessment" className={btnPrimarySm}>
