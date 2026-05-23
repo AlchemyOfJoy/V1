@@ -40,7 +40,9 @@ export default function AuthForm({
         return;
       }
       track(isSignup ? "sign_up" : "login", { method: "email" });
-      router.push(isSignup ? "/assessment" : "/dashboard");
+      // Curriculum is the post-auth home — onboarding redirects new users
+      // there automatically; returning users land on the dashboard.
+      router.push("/curriculum");
       router.refresh();
     } catch {
       setError("Something didn't work — check your connection and try again?");
