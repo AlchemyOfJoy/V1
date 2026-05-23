@@ -67,7 +67,7 @@ export const MODULES: Module[] = [
         title: "Self Eulogy",
         subtitle:
           "Write the eulogy you want spoken about you. Reverse-engineer the life that earns it.",
-        status: "coming-soon",
+        status: "available",
         workbookPage: "p. 20",
       },
       {
@@ -76,7 +76,7 @@ export const MODULES: Module[] = [
         title: "The List of Joy™",
         subtitle:
           "A living list of what brings you joy — the raw material for everything that follows.",
-        status: "coming-soon",
+        status: "available",
         workbookPage: "p. 26",
       },
       {
@@ -85,7 +85,7 @@ export const MODULES: Module[] = [
         title: "Priority Pillars",
         subtitle:
           "Take inventory of the 12 sub-pillars holding up your life. Notice what's depleted.",
-        status: "coming-soon",
+        status: "available",
         workbookPage: "p. 29",
       },
       {
@@ -94,7 +94,7 @@ export const MODULES: Module[] = [
         title: "Subconscious Script",
         subtitle:
           "Build the SubScript that primes your mind for who you're becoming.",
-        status: "coming-soon",
+        status: "available",
         workbookPage: "p. 31–36",
       },
     ],
@@ -170,6 +170,7 @@ export const WORKSHEET_IDS = {
   scienceOfJoy: "01_science_of_joy",
   coreNarrative: "02_core_narrative",
   selfEulogy: "02_self_eulogy",
+  listOfJoy: "02_list_of_joy",
   priorityPillars: "02_priority_pillars",
   subscript: "02_subscript",
 } as const;
@@ -185,7 +186,114 @@ export interface CoreNarrativeData {
   reflection?: string;
 }
 
-export type WorksheetData = ScienceOfJoyData | CoreNarrativeData;
+export interface SelfEulogyData {
+  eulogy?: string;
+  prompts?: Record<string, string>;
+}
+
+export interface PriorityPillarsData {
+  /** Stored as 0–10 per sub-pillar (12 keys total). */
+  scores?: Partial<Record<PriorityPillarKey, number>>;
+  reflection?: string;
+  /** Set when the user takes a "snapshot" — frozen for the history view. */
+  last_snapshot_at?: string;
+}
+
+export interface SubscriptData {
+  target_date?: string; // YYYY-MM-DD
+  manifestations?: string[]; // up to ~12 lines
+  affirmations?: string[]; // up to ~12 lines
+  emotion_anchor?: string;
+  reflection?: string;
+}
+
+export type WorksheetData =
+  | ScienceOfJoyData
+  | CoreNarrativeData
+  | SelfEulogyData
+  | PriorityPillarsData
+  | SubscriptData;
+
+/** The 12 sub-pillars across 6 priority pillars (workbook p. 29). */
+export const PRIORITY_PILLARS = [
+  {
+    id: "love",
+    label: "Love",
+    subs: [
+      { id: "love_self", label: "Self" },
+      { id: "love_romantic", label: "Romantic" },
+    ],
+  },
+  {
+    id: "faith",
+    label: "Faith",
+    subs: [
+      { id: "faith_self", label: "In Self" },
+      { id: "faith_universe", label: "In Universe / Higher Power" },
+    ],
+  },
+  {
+    id: "health",
+    label: "Health",
+    subs: [
+      { id: "health_mind", label: "Mind" },
+      { id: "health_body", label: "Body" },
+    ],
+  },
+  {
+    id: "family",
+    label: "Family",
+    subs: [
+      { id: "family_blood", label: "Blood" },
+      { id: "family_chosen", label: "Chosen" },
+    ],
+  },
+  {
+    id: "career",
+    label: "Career",
+    subs: [
+      { id: "career_money", label: "Money" },
+      { id: "career_giving_back", label: "Giving Back" },
+    ],
+  },
+  {
+    id: "community",
+    label: "Community",
+    subs: [
+      { id: "community_personal", label: "Personal" },
+      { id: "community_professional", label: "Professional" },
+    ],
+  },
+] as const;
+
+export type PriorityPillarKey =
+  | "love_self"
+  | "love_romantic"
+  | "faith_self"
+  | "faith_universe"
+  | "health_mind"
+  | "health_body"
+  | "family_blood"
+  | "family_chosen"
+  | "career_money"
+  | "career_giving_back"
+  | "community_personal"
+  | "community_professional";
+
+export const PILLAR_KEYS: PriorityPillarKey[] = [
+  "love_self",
+  "love_romantic",
+  "faith_self",
+  "faith_universe",
+  "health_mind",
+  "health_body",
+  "family_blood",
+  "family_chosen",
+  "career_money",
+  "career_giving_back",
+  "community_personal",
+  "community_professional",
+];
 
 /** Look up a module by its URL slug. */
 export function findModule(slug: string): Module | undefined {
