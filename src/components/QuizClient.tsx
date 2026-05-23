@@ -15,7 +15,11 @@ const HOW_IT_WORKS = [
   "Recommended monthly for a year, then quarterly thereafter.",
 ];
 
-export default function QuizClient() {
+export default function QuizClient({
+  context = "ad_hoc",
+}: {
+  context?: string;
+}) {
   const router = useRouter();
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>(
@@ -57,7 +61,7 @@ export default function QuizClient() {
       const res = await fetch("/api/assessments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers, note }),
+        body: JSON.stringify({ answers, note, context }),
       });
       const data = await res.json();
       if (!res.ok) {
