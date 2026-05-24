@@ -3,20 +3,17 @@ import Link from "next/link";
 import { JOURNEY, type IttPillar } from "@/lib/itt";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
+import IttDiagram from "@/components/app/IttDiagram";
 
-export const metadata: Metadata = {
-  title: "Journey",
-  robots: { index: false },
-};
-
+export const metadata: Metadata = { title: "Journey", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-const PILLAR_BADGE: Record<IttPillar, string> = {
-  foundations: "bg-mist text-navy/70",
-  invest: "bg-gold/15 text-[#8a6d00]",
-  train: "bg-cyan-deep/12 text-cyan-deep",
-  action: "bg-[#d99a6c]/15 text-[#a16330]",
-  integration: "bg-navy/8 text-navy",
+const PILLAR_NUMBER: Record<IttPillar, string> = {
+  foundations: "00",
+  invest: "01",
+  train: "02",
+  action: "03",
+  integration: "04",
 };
 
 export default async function JourneyPage() {
@@ -27,8 +24,6 @@ export default async function JourneyPage() {
     [user.id],
   );
   const doneIds = new Set(completed.map((r) => r.worksheet_id));
-
-  // Heuristic — a section is "complete" when its worksheet_id is in done.
   const sectionDone: Record<string, boolean> = {
     "core-narrative": doneIds.has("02_core_narrative"),
     "self-eulogy": doneIds.has("02_self_eulogy"),
@@ -38,22 +33,19 @@ export default async function JourneyPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-10 px-5 py-8 sm:py-12">
-      <header>
-        <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
+    <div className="mx-auto max-w-3xl space-y-8 px-5 pb-12 pt-6 sm:pt-10">
+      {/* Visual ITT framework at the top — replaces the paragraph of explanation */}
+      <header className="space-y-4">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
           The ITT Framework
         </p>
-        <h1 className="mt-2 font-serif text-[38px] font-medium leading-tight tracking-tight text-navy sm:text-[46px]">
-          Your <em className="text-cyan-deep">Journey</em>
-        </h1>
-        <p className="mt-3 max-w-xl font-sans text-[16px] font-light leading-relaxed text-navy/65">
-          Invest in Joy. Train Your Brain. Take Bold Action. Then run it
-          for ninety days. Take it in order, or follow what&apos;s calling
-          you.
-        </p>
+        <div className="rounded-3xl border border-navy/10 bg-gradient-to-br from-mist/60 to-white p-4 sm:p-6">
+          <IttDiagram className="mx-auto max-w-md" />
+        </div>
       </header>
 
-      <ol className="space-y-6">
+      {/* Pillars */}
+      <ol className="space-y-4">
         {JOURNEY.map((pillar) => {
           const completeCount = pillar.sections.filter(
             (s) => sectionDone[s.id] === true,
@@ -62,85 +54,94 @@ export default async function JourneyPage() {
           const pct =
             totalCount === 0 ? 0 : Math.round((completeCount / totalCount) * 100);
 
+          const isHero =
+            pillar.id === "invest" ||
+            pillar.id === "train" ||
+            pillar.id === "action";
+
           return (
-            <li
-              key={pillar.id}
-              className="overflow-hidden rounded-3xl border border-navy/12 bg-white"
-            >
-              <header className="flex flex-wrap items-baseline justify-between gap-3 px-5 pt-5">
-                <div>
-                  <p
-                    className={`inline-block rounded-full px-2.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] ${PILLAR_BADGE[pillar.id]}`}
+            <li key={pillar.id}>
+              <details
+                className="group overflow-hidden rounded-3xl border border-navy/10 bg-white open:border-cyan-deep/30 open:shadow-[0_2px_12px_rgba(0,23,31,0.06)]"
+                open={pct > 0 && pct < 100}
+              >
+                <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-4">
+                  <span
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-semibold ${
+                      pct === 100
+                        ? "bg-cyan-deep text-white"
+                        : pct > 0
+                          ? "bg-cyan-deep/15 text-cyan-deep"
+                          : "bg-mist text-navy/50"
+                    }`}
+                    aria-hidden
                   >
-                    {pillar.number === 0
-                      ? "Foundations"
-                      : `Pillar ${pillar.number}`}
-                  </p>
-                  <h2 className="mt-2 font-serif text-[26px] font-medium text-navy">
-                    {pillar.title.split(pillar.italicWord)[0]}
-                    <em className="text-cyan-deep">{pillar.italicWord}</em>
-                    {pillar.title.split(pillar.italicWord)[1] ?? ""}
-                  </h2>
-                  <p className="mt-1 font-sans text-[14px] font-light text-navy/60">
-                    {pillar.tagline}
-                  </p>
+                    {PILLAR_NUMBER[pillar.id]}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h2
+                      className={`font-serif font-medium tracking-tight text-navy ${
+                        isHero ? "text-[22px]" : "text-[18px]"
+                      }`}
+                    >
+                      {pillar.title.split(pillar.italicWord)[0]}
+                      <em className="text-cyan-deep">{pillar.italicWord}</em>
+                      {pillar.title.split(pillar.italicWord)[1] ?? ""}
+                    </h2>
+                    <p className="mt-0.5 font-sans text-[12px] font-light text-navy/55">
+                      {pillar.tagline}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className="font-serif text-[15px] font-medium tabular-nums text-navy">
+                      {pct}%
+                    </span>
+                    <span className="ml-2 text-navy/40 transition group-open:rotate-180">
+                      ▾
+                    </span>
+                  </div>
+                </summary>
+
+                {/* Progress strip */}
+                <div className="mx-5 h-[3px] overflow-hidden rounded-full bg-mist">
+                  <div
+                    className="h-full bg-cyan-deep transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
-                <div className="text-right">
-                  <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-navy/45">
-                    Progress
-                  </p>
-                  <p className="font-serif text-[22px] font-medium tabular-nums text-navy">
-                    {pct}%
-                  </p>
-                </div>
-              </header>
 
-              <p className="px-5 pt-3 font-sans text-[14px] font-light leading-relaxed text-navy/70">
-                {pillar.description}
-              </p>
-
-              <div className="mx-5 mt-4 h-1 overflow-hidden rounded-full bg-mist">
-                <div
-                  className="h-full bg-cyan-deep transition-all"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-
-              <ul className="mt-4 divide-y divide-navy/8">
-                {pillar.sections.map((section) => {
-                  const done = sectionDone[section.id] === true;
-                  return (
-                    <li key={section.id}>
-                      <Link
-                        href={section.href}
-                        className="flex items-start gap-4 px-5 py-3.5 transition hover:bg-mist/40"
-                      >
-                        <span
-                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${
-                            done
-                              ? "bg-cyan-deep text-white"
-                              : "bg-mist text-navy/50"
-                          }`}
-                          aria-hidden
+                {/* Sections list — no description prose, just title + minutes */}
+                <ul className="mt-2 divide-y divide-navy/8">
+                  {pillar.sections.map((s) => {
+                    const done = sectionDone[s.id] === true;
+                    return (
+                      <li key={s.id}>
+                        <Link
+                          href={s.href}
+                          className="flex items-center gap-3 px-5 py-3 transition hover:bg-mist/40"
                         >
-                          {done ? "✓" : ""}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-serif text-[17px] font-medium text-navy">
-                            {section.title}
-                          </p>
-                          <p className="mt-0.5 font-sans text-[13px] font-light leading-relaxed text-navy/60">
-                            {section.oneLiner}
-                          </p>
-                        </div>
-                        <span className="self-center whitespace-nowrap font-sans text-[11px] text-navy/45">
-                          {section.estimatedMin} min
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                              done
+                                ? "bg-cyan-deep text-white"
+                                : "border border-navy/20 bg-white text-transparent"
+                            }`}
+                            aria-hidden
+                          >
+                            {done ? "✓" : "·"}
+                          </span>
+                          <span className="flex-1 truncate font-serif text-[15px] text-navy">
+                            {s.title}
+                          </span>
+                          <span className="font-sans text-[11px] tabular-nums text-navy/45">
+                            {s.estimatedMin}m
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
             </li>
           );
         })}

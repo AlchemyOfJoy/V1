@@ -1,10 +1,6 @@
 import Link from "next/link";
+import { Tridot } from "@/components/app/Wave";
 
-/**
- * Shared shell for Journey sub-section pages. Header + content slot +
- * "back to the pillar" footer. Used by Foundations cards, Invest-in-Joy
- * essays, Take Bold Action sub-sections, etc.
- */
 export default function SectionShell({
   pillarLabel,
   pillarHref,
@@ -25,36 +21,40 @@ export default function SectionShell({
   const before = title.split(italicWord)[0];
   const after = title.split(italicWord)[1] ?? "";
   return (
-    <article className="mx-auto max-w-3xl space-y-10 px-5 py-10">
+    <article className="mx-auto max-w-2xl space-y-7 px-5 pb-12 pt-6 sm:pt-10">
+      <Link
+        href={pillarHref}
+        className="inline-block font-sans text-[12px] text-navy/55 transition-colors hover:text-cyan-deep"
+      >
+        ← {pillarLabel}
+      </Link>
+
       <header>
-        <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
-          {pillarLabel}
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
+            {pillarLabel}
+          </p>
           {estimatedMin && (
-            <span className="ml-2 text-navy/45">~{estimatedMin} min</span>
+            <p className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/45">
+              ~{estimatedMin} min
+            </p>
           )}
-        </p>
+        </div>
         <h1 className="mt-3 font-serif text-[36px] font-medium leading-tight tracking-tight text-navy sm:text-[44px]">
           {before}
           <em className="text-cyan-deep">{italicWord}</em>
           {after}
         </h1>
         {oneLiner && (
-          <p className="mt-3 font-sans text-[16px] font-light leading-relaxed text-navy/65">
+          <p className="mt-3 font-serif text-[17px] italic leading-relaxed text-navy/65">
             {oneLiner}
           </p>
         )}
       </header>
 
-      {children}
+      <Tridot />
 
-      <footer className="border-t border-navy/10 pt-6">
-        <Link
-          href={pillarHref}
-          className="font-sans text-[13px] text-navy/55 transition-colors hover:text-cyan-deep"
-        >
-          ← Back
-        </Link>
-      </footer>
+      {children}
     </article>
   );
 }
