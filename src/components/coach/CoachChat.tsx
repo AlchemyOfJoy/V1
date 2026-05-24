@@ -314,7 +314,7 @@ export default function CoachChat({
         </div>
         <div className="border-t border-navy/10 p-4">
           <p className="font-sans text-[11px] font-light leading-relaxed text-navy/55">
-            The Companion is not a therapist or crisis line. If you&apos;re
+            BrentBot is not a therapist or crisis line. If you&apos;re
             in crisis, call <strong className="text-navy">988</strong> in
             the US or <strong className="text-navy">findahelpline.com</strong>{" "}
             elsewhere.
@@ -339,12 +339,16 @@ export default function CoachChat({
                     ✦
                   </p>
                   <h1 className="mt-4 font-serif text-[36px] font-medium leading-tight tracking-tight text-navy sm:text-[44px]">
-                    Your <em className="text-cyan-deep">Companion</em>
+                    Meet <em className="text-cyan-deep">BrentBot</em>
                   </h1>
                   <p className="mx-auto mt-3 max-w-xl font-sans text-[15px] font-light leading-relaxed text-navy/65">
-                    Trained on Brent&apos;s book, retreats, and methodology —
-                    here at three in the morning when the old story shows up
-                    again. Tell me what&apos;s coming up.
+                    Your AI coach. Trained on Brent&apos;s book, retreats,
+                    and methodology — here at three in the morning when
+                    the old story shows up again. Tell me what&apos;s coming up.
+                  </p>
+                  <p className="mx-auto mt-2 max-w-xl font-sans text-[12px] font-light text-navy/45">
+                    Ready for a human coach when you are. Tap{" "}
+                    <em>Upgrade</em> in the sidebar.
                   </p>
                 </div>
                 <ul className="mx-auto grid max-w-xl gap-2 text-left sm:grid-cols-2">

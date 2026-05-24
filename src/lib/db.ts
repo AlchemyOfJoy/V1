@@ -229,6 +229,101 @@ const SCHEMA = [
      completed_at TIMESTAMPTZ,
      UNIQUE (user_id, section_id)
    )`,
+  // --- Coach Management System (Phase 1: foundations) ---
+  // role: 'user' (default) | 'coach' | 'admin'
+  // coach_id NULL = BrentBot (the AI default coach); otherwise points to
+  //   a users.id where role = 'coach' and certification is complete.
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_id TEXT REFERENCES users(id) ON DELETE SET NULL`,
+  `CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)`,
+  `CREATE INDEX IF NOT EXISTS idx_users_coach_id ON users(coach_id)`,
+
+  // Coach profile — only present when users.role = 'coach'
+  `CREATE TABLE IF NOT EXISTS coach_profiles (
+     user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+     display_name TEXT,
+     bio TEXT,
+     specialties JSONB NOT NULL DEFAULT '[]'::jsonb,
+     intro_video_url TEXT,
+     time_zone TEXT,
+     languages JSONB NOT NULL DEFAULT '["en"]'::jsonb,
+     capacity INT NOT NULL DEFAULT 12,
+     cert_status TEXT NOT NULL DEFAULT 'phase_1_client',
+     certified_at TIMESTAMPTZ,
+     accepting_clients BOOLEAN NOT NULL DEFAULT false,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+
+  // Per-item privacy grants — explicit consent to share with the
+  // assigned coach. Default: nothing is shared. Revocable per item.
+  `CREATE TABLE IF NOT EXISTS shared_items (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     coach_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     resource_type TEXT NOT NULL,
+     resource_id TEXT NOT NULL,
+     shared_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     revoked_at TIMESTAMPTZ,
+     UNIQUE (user_id, coach_id, resource_type, resource_id)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_shared_items_coach
+     ON shared_items(coach_id, revoked_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_shared_items_user
+     ON shared_items(user_id, revoked_at)`,
+
+  // Coach-private notes about a client (never visible to the client)
+  `CREATE TABLE IF NOT EXISTS coach_notes (
+     id BIGSERIAL PRIMARY KEY,
+     coach_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     client_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     body TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_coach_notes_pair
+     ON coach_notes(coach_id, client_id, created_at DESC)`,
+
+  // Coaching session ratings — client-facing trust, coach-facing dev
+  `CREATE TABLE IF NOT EXISTS coach_session_ratings (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     coach_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     session_kind TEXT NOT NULL,
+     stars INT,
+     chips JSONB NOT NULL DEFAULT '[]'::jsonb,
+     comment TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_ratings_coach
+     ON coach_session_ratings(coach_id, created_at DESC)`,
+
+  // Certification progress per coach — 5 phases per the spec
+  `CREATE TABLE IF NOT EXISTS certification_progress (
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     phase TEXT NOT NULL,
+     status TEXT NOT NULL DEFAULT 'pending',
+     started_at TIMESTAMPTZ,
+     completed_at TIMESTAMPTZ,
+     notes TEXT,
+     PRIMARY KEY (user_id, phase)
+   )`,
+
+  // Coach-pushed assignments to clients (custom + bounded by methodology)
+  `CREATE TABLE IF NOT EXISTS coach_assignments (
+     id BIGSERIAL PRIMARY KEY,
+     coach_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     client_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     kind TEXT NOT NULL,
+     title TEXT NOT NULL,
+     body TEXT,
+     resource_ref TEXT,
+     due_at TIMESTAMPTZ,
+     completed_at TIMESTAMPTZ,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_assignments_client
+     ON coach_assignments(client_id, completed_at, due_at)`,
   // Additive column migrations — safe and idempotent
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_started_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_completed_at TIMESTAMPTZ`,

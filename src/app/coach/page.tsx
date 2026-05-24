@@ -9,7 +9,7 @@ import {
 import CoachChat from "@/components/coach/CoachChat";
 
 export const metadata: Metadata = {
-  title: "Companion",
+  title: "Your Coach",
   robots: { index: false },
 };
 
