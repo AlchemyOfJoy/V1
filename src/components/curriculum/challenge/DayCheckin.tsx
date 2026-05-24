@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { btnPrimary } from "@/lib/ui";
 import { formatSavedAt } from "../useWorksheetSave";
+import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
+
+const MILESTONE_DAYS = new Set([1, 7, 14, 21, 28, 30, 42, 56, 60, 84, 90]);
 
 interface Checkin {
   day_number: number;
@@ -22,6 +25,7 @@ export default function DayCheckin({
   initial: Checkin | null;
 }) {
   const router = useRouter();
+  const { celebrate } = useCelebrate();
   const [am, setAm] = useState(initial?.subscript_morning_done ?? false);
   const [pm, setPm] = useState(initial?.subscript_evening_done ?? false);
   const [focus, setFocus] = useState(initial?.weekly_focus_action ?? "");
@@ -76,8 +80,40 @@ export default function DayCheckin({
   }, [payload, day]);
 
   function close() {
-    router.push("/curriculum/90-day-challenge");
-    router.refresh();
+    const isMilestone = MILESTONE_DAYS.has(day);
+    const isMajor = day === 90;
+    if (isMajor) {
+      celebrate({
+        size: "major",
+        eyebrow: "Day 90",
+        primary: "You ran the system for ninety days.",
+        secondary: "Tell me you&apos;re not changed.",
+      });
+    } else if (isMilestone) {
+      celebrate({
+        size: "milestone",
+        eyebrow: `Day ${day} · milestone`,
+        primary: "Logged.",
+        secondary:
+          day === 30
+            ? "First month done. The shift is starting to compound."
+            : day === 60
+              ? "Sixty days. The install is taking."
+              : "Another marker on the path.",
+      });
+    } else {
+      celebrate({
+        size: "micro",
+        primary: `Day ${day} logged. ✦`,
+      });
+    }
+    setTimeout(
+      () => {
+        router.push("/curriculum/90-day-challenge");
+        router.refresh();
+      },
+      isMajor ? 5000 : isMilestone ? 3000 : 900,
+    );
   }
 
   const checkboxClass =

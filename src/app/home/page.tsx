@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { todayDrop } from "@/lib/daily-drop";
 import { getTodayPulse } from "@/lib/joy-pulse";
@@ -13,6 +14,8 @@ import IttLoopControl from "@/components/home/IttLoopControl";
 import PrimaryAction from "@/components/home/PrimaryAction";
 import QuickStartChips from "@/components/home/QuickStartChips";
 import TodayCard from "@/components/home/TodayCard";
+import TodaysWins from "@/components/home/TodaysWins";
+import WelcomeBack from "@/components/home/WelcomeBack";
 import { Tridot } from "@/components/app/Wave";
 import FavoriteButton from "@/components/library/FavoriteButton";
 import { getCheckin } from "@/lib/challenge";
@@ -30,6 +33,17 @@ interface NameRow {
 
 export default async function HomePage() {
   const user = (await getCurrentUser())!;
+  // Onboarding gate — anyone who hasn't completed the 7-screen tutorial
+  // gets routed there first. Sets the narrative ("you're on Day 1 of
+  // a 90-day arc") before they land on Home.
+  const onboardCheck = await query<{ curriculum_started_at: string | Date | null }>(
+    `SELECT curriculum_started_at FROM users WHERE id = $1`,
+    [user.id],
+  );
+  if (!onboardCheck[0]?.curriculum_started_at) {
+    redirect("/curriculum/onboarding");
+  }
+
   const [drop, pulse, loop, joyItems, challenge, activeSub, nameRow] =
     await Promise.all([
       todayDrop(),
@@ -58,6 +72,26 @@ export default async function HomePage() {
   const isMorning = hour < 16;
   const todayCheckin = dayNumber !== null ? await getCheckin(user.id, dayNumber) : null;
   const todayLogged = todayCheckin !== null;
+  const ittLoopClosed =
+    loop !== null && loop.action_status !== null && loop.action_status !== "pending";
+  const joyItemsToday = joyItems.filter((j) => {
+    const created =
+      j.created_at instanceof Date ? j.created_at : new Date(j.created_at);
+    return (
+      created.toDateString() === new Date().toDateString()
+    );
+  }).length;
+
+  // Welcome-back signal — gap in days between current_day and last check-in
+  const gapRows = await query<{ last_day: number | null }>(
+    `SELECT MAX(day_number) AS last_day FROM challenge_checkins WHERE user_id = $1`,
+    [user.id],
+  );
+  const lastCheckinDay = gapRows[0]?.last_day ?? 0;
+  const gapDays =
+    dayNumber !== null && !todayLogged
+      ? Math.max(0, dayNumber - lastCheckinDay - 1)
+      : 0;
 
   // Deterministic 3-from-list pick
   const threeFromList = (() => {
@@ -82,6 +116,11 @@ export default async function HomePage() {
           </p>
         )}
       </header>
+
+      {/* Gentle re-entry if user has been gone */}
+      {dayNumber !== null && gapDays >= 3 && (
+        <WelcomeBack gapDays={gapDays} currentDay={dayNumber} />
+      )}
 
       {/* THE HERO MOMENT — quote, full bleed, big */}
       <div className="space-y-3">
@@ -125,6 +164,14 @@ export default async function HomePage() {
 
       {/* Three from your list — minimal, beautiful */}
       <ThreeJoys items={threeFromList} />
+
+      {/* What you've done today — the momentum recap */}
+      <TodaysWins
+        pulseLogged={pulse !== null}
+        challengeDayLogged={todayLogged}
+        ittLoopClosed={ittLoopClosed}
+        joyItemsAddedToday={joyItemsToday}
+      />
 
       {/* ITT loop — collapsed by default behind a details */}
       <details className="group rounded-3xl border border-navy/10 bg-mist/30 px-5 py-4">
