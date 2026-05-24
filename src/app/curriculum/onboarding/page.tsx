@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Onboarding from "@/components/curriculum/Onboarding";
+import OnboardingTutorial from "@/components/onboarding/OnboardingTutorial";
 
 export const metadata: Metadata = {
   title: "Welcome",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function OnboardingPage() {
-  return <Onboarding />;
+  return <OnboardingTutorial />;
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
 import { btnPrimary } from "@/lib/ui";
 
 /**
@@ -18,6 +19,7 @@ export default function FloatingActions() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const router = useRouter();
+  const { celebrate } = useCelebrate();
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -32,13 +34,36 @@ export default function FloatingActions() {
         body: JSON.stringify({ content: text }),
       });
       if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => ({}));
       setContent("");
       setMsg("Added ✦");
       router.refresh();
-      setTimeout(() => {
-        setOpen(false);
-        setMsg(null);
-      }, 700);
+      // If they just crossed a milestone, fire a milestone celebration.
+      if (data?.milestone) {
+        const count: number = data.milestone.count;
+        const secondaries: Record<number, string> = {
+          1: "We'll come back to this every day. Forever.",
+          10: "Brent started here.",
+          25: "Look at the life you're building.",
+          100: "Brent started with ten.",
+          500: "Five hundred. Notice the life you've built.",
+        };
+        setTimeout(() => {
+          setOpen(false);
+          setMsg(null);
+          celebrate({
+            size: "milestone",
+            eyebrow: "List of Joy",
+            primary: data.milestone.label,
+            secondary: secondaries[count] ?? "Keep going.",
+          });
+        }, 400);
+      } else {
+        setTimeout(() => {
+          setOpen(false);
+          setMsg(null);
+        }, 700);
+      }
     } catch {
       setMsg("Couldn't save — try again?");
     } finally {

@@ -7,6 +7,7 @@ import {
   PasswordForm,
   ProfileForm,
 } from "@/components/account/AccountForms";
+import AccessibilityToggle from "@/components/account/AccessibilityToggle";
 
 export const metadata: Metadata = {
   title: "Account",
@@ -43,6 +44,13 @@ export default async function AccountPage() {
             {hasPassword ? "Change password" : "Set a password"}
           </h2>
           <PasswordForm hasPassword={hasPassword} />
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-serif text-[22px] font-medium text-navy">
+            Accessibility
+          </h2>
+          <AccessibilityToggle />
         </section>
 
         <section className="space-y-4 rounded-3xl border border-navy/10 bg-white p-6 sm:p-8">

@@ -12,6 +12,7 @@ import JoyPulseControl from "@/components/home/JoyPulseControl";
 import IttLoopControl from "@/components/home/IttLoopControl";
 import PrimaryAction from "@/components/home/PrimaryAction";
 import { Tridot } from "@/components/app/Wave";
+import FavoriteButton from "@/components/library/FavoriteButton";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -39,6 +40,12 @@ export default async function HomePage() {
       ),
       query<NameRow>(`SELECT name FROM users WHERE id = $1`, [user.id]),
     ]);
+  const favRows = await query<{ id: string }>(
+    `SELECT id::text AS id FROM quote_favorites
+       WHERE user_id = $1 AND quote_id = $2 LIMIT 1`,
+    [user.id, drop.id],
+  );
+  const isFavorited = favRows.length > 0;
 
   const firstName =
     nameRow[0]?.name?.split(" ")[0] ?? user.email.split("@")[0];
@@ -72,12 +79,22 @@ export default async function HomePage() {
       </header>
 
       {/* THE HERO MOMENT — quote, full bleed, big */}
-      <CoachCard
-        size="hero"
-        eyebrow="Today's Joy Drop"
-        body={drop.body}
-        source={drop.source ?? undefined}
-      />
+      <div className="space-y-3">
+        <CoachCard
+          size="hero"
+          eyebrow="Today's Joy Drop"
+          body={drop.body}
+          source={drop.source ?? undefined}
+        />
+        {!drop.id.startsWith("studio:") && (
+          <div className="flex justify-end">
+            <FavoriteButton
+              quoteId={drop.id}
+              initialSaved={isFavorited}
+            />
+          </div>
+        )}
+      </div>
 
       <Tridot />
 

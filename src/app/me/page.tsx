@@ -201,10 +201,30 @@ export default async function MePage() {
         )}
       </section>
 
+      {/* Show me my wins — primary lifeline link */}
+      <Link
+        href="/me/wins"
+        className="group flex items-center justify-between gap-4 rounded-3xl border border-[#C89A3F]/40 bg-gradient-to-br from-[#FAF6EC] to-white px-6 py-5 transition hover:border-[#C89A3F]/70"
+      >
+        <div>
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a6d00]">
+            On a hard day
+          </p>
+          <p className="mt-1 font-serif text-[22px] font-medium text-navy">
+            Show me my <em className="text-cyan-deep">wins</em>
+          </p>
+        </div>
+        <span aria-hidden className="text-[28px] text-[#C89A3F] transition group-hover:translate-x-1">
+          →
+        </span>
+      </Link>
+
       {/* Shortcuts — compact tile row */}
       <section className="grid gap-2 sm:grid-cols-2">
         {[
-          { href: "/coach", label: "Companion", icon: "✦", accent: true },
+          { href: "/coach", label: "Your Coach", icon: "✦", accent: true },
+          { href: "/me/letters", label: "Letters", icon: "✉" },
+          { href: "/me/my-joy", label: "My Joy Library", icon: "♥" },
           { href: "/curriculum/journal", label: "Journal", icon: "❋" },
           { href: "/curriculum/export", label: "Export", icon: "↓" },
           { href: "/account", label: "Settings", icon: "○" },

@@ -325,6 +325,17 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS idx_assignments_client
      ON coach_assignments(client_id, completed_at, due_at)`,
 
+  // --- Favorites: My Joy Library + Letters from Future Self ---
+  `CREATE TABLE IF NOT EXISTS quote_favorites (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     quote_id TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     UNIQUE (user_id, quote_id)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_quote_favorites_user
+     ON quote_favorites(user_id, created_at DESC)`,
+
   // --- Phase 2: coaching commerce (placeholders for Stripe Connect) ---
 
   // User-facing waitlist for human coaching — since no coaches exist yet

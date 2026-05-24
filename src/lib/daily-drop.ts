@@ -13,6 +13,7 @@ import { listContent } from "@/lib/coach/content";
  */
 
 export interface JoyDrop {
+  id: string;
   body: string;
   attribution: string;
   source: string | null;
@@ -21,6 +22,7 @@ export interface JoyDrop {
 export async function todayDrop(section?: QuoteSection): Promise<JoyDrop> {
   const quote = quoteForContext(new Date(), section);
   return {
+    id: quote.id,
     body: quote.body,
     attribution: "BJF",
     source: "The Alchemy of Joy",
@@ -34,6 +36,7 @@ export function randomDrop(section?: QuoteSection): JoyDrop {
   const d = new Date(now.getTime() + Math.floor(Math.random() * 10_000_000));
   const quote = quoteForContext(d, section);
   return {
+    id: quote.id,
     body: quote.body,
     attribution: "BJF",
     source: "The Alchemy of Joy",
@@ -47,6 +50,7 @@ export async function adminAddedDrops(): Promise<JoyDrop[]> {
     return principles
       .filter((p) => p.body.trim().length > 0 && p.body.length <= 600)
       .map((p) => ({
+        id: `studio:${p.id}`,
         body: p.body.trim(),
         attribution: "BJF",
         source: p.source ?? p.title,

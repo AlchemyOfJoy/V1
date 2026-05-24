@@ -11,6 +11,8 @@ import FloatingActions from "./FloatingActions";
  *   • Persistent floating [+] List of Joy and [⚡] Reset Breath buttons
  *
  * Pages just render their content children; the shell handles chrome.
+ * Celebration + Sacred Work providers are at root layout so curriculum
+ * routes (which use their own layout) can fire celebrations too.
  */
 export default async function AppShell({
   children,

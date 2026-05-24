@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { todayDrop } from "@/lib/daily-drop";
+import { getCurrentUser } from "@/lib/auth";
+import { query } from "@/lib/db";
 import CoachCard from "@/components/app/CoachCard";
 import QuoteBrowser from "@/components/library/QuoteBrowser";
 import { Tridot } from "@/components/app/Wave";
@@ -26,7 +28,15 @@ const MOODS = [
 ];
 
 export default async function LibraryPage() {
+  const user = await getCurrentUser();
   const drop = await todayDrop();
+  const favoriteRows = user
+    ? await query<{ quote_id: string }>(
+        `SELECT quote_id FROM quote_favorites WHERE user_id = $1`,
+        [user.id],
+      )
+    : [];
+  const favoriteIds = favoriteRows.map((r) => r.quote_id);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-5 pb-12 pt-6 sm:pt-10">
@@ -78,7 +88,7 @@ export default async function LibraryPage() {
           Search any word. Filter by ITT pillar.
         </p>
         <div className="mt-5">
-          <QuoteBrowser />
+          <QuoteBrowser initialFavoriteIds={favoriteIds} />
         </div>
       </section>
     </div>

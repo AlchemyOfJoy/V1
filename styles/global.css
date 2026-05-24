@@ -90,3 +90,107 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   Sacred Work mode — the second register (§16.6)
+   Triggered via <SacredPage /> on Forgiveness Vault, Self-Eulogy,
+   deep narrative work. Slow palette shift, dimmer chrome, reverent.
+   ───────────────────────────────────────────────────────── */
+html.sacred-mode {
+  background-color: #1B2545;
+}
+html.sacred-mode body {
+  background-color: #1B2545;
+  color: #F7F2E9;
+  transition: background-color 800ms cubic-bezier(0.4, 0.0, 0.2, 1),
+    color 800ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+/* The site header dims into the indigo register */
+html.sacred-mode header.sticky {
+  background-color: rgba(27, 37, 69, 0.92) !important;
+  border-color: rgba(247, 242, 233, 0.10) !important;
+}
+html.sacred-mode header.sticky a,
+html.sacred-mode header.sticky button {
+  color: rgba(247, 242, 233, 0.75);
+}
+/* Bottom tab bar dims to indigo */
+html.sacred-mode nav.fixed.inset-x-0.bottom-0 {
+  background-color: rgba(27, 37, 69, 0.92) !important;
+  border-color: rgba(247, 242, 233, 0.10) !important;
+}
+html.sacred-mode nav.fixed.inset-x-0.bottom-0 a {
+  color: rgba(247, 242, 233, 0.60);
+}
+/* Side rail dims */
+html.sacred-mode aside.lg\:flex {
+  background-color: rgba(247, 242, 233, 0.04) !important;
+  border-color: rgba(247, 242, 233, 0.10) !important;
+}
+html.sacred-mode aside.lg\:flex a {
+  color: rgba(247, 242, 233, 0.70);
+}
+/* Floating actions soften */
+html.sacred-mode button[aria-label="Add to List of Joy"],
+html.sacred-mode a[aria-label="Reset Breath"] {
+  opacity: 0.6;
+  transition: opacity 600ms ease;
+}
+html.sacred-mode button[aria-label="Add to List of Joy"]:hover,
+html.sacred-mode a[aria-label="Reset Breath"]:hover {
+  opacity: 1;
+}
+
+/* Forgiveness Wizard surfaces — keep them legible on indigo */
+html.sacred-mode .bg-white,
+html.sacred-mode .bg-mist {
+  background-color: rgba(247, 242, 233, 0.06) !important;
+  border-color: rgba(247, 242, 233, 0.15) !important;
+}
+html.sacred-mode .text-navy,
+html.sacred-mode .text-navy\/85,
+html.sacred-mode .text-navy\/80,
+html.sacred-mode .text-navy\/75,
+html.sacred-mode .text-navy\/70,
+html.sacred-mode .text-navy\/65,
+html.sacred-mode .text-navy\/60,
+html.sacred-mode .text-navy\/55,
+html.sacred-mode .text-navy\/45 {
+  color: rgba(247, 242, 233, 0.92) !important;
+}
+html.sacred-mode .text-cyan-deep {
+  color: #E5C265 !important;
+}
+html.sacred-mode input,
+html.sacred-mode textarea {
+  background-color: rgba(247, 242, 233, 0.04) !important;
+  color: rgba(247, 242, 233, 0.92) !important;
+  border-color: rgba(247, 242, 233, 0.2) !important;
+}
+html.sacred-mode input::placeholder,
+html.sacred-mode textarea::placeholder {
+  color: rgba(247, 242, 233, 0.35) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Easier-on-my-brain mode (§31.1)
+   Switches body font to a dyslexia-friendly stack, tightens line
+   length, disables breath-paced animations.
+   ───────────────────────────────────────────────────────── */
+html.easier-mode body {
+  font-family: "OpenDyslexic", "Atkinson Hyperlegible", "Comic Sans MS",
+    ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: 0.01em;
+}
+html.easier-mode .font-serif {
+  font-family: "OpenDyslexic", "Atkinson Hyperlegible", "Comic Sans MS",
+    ui-serif, Georgia, serif !important;
+}
+html.easier-mode * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+html.easier-mode main {
+  max-width: 38rem;
+}
+
