@@ -119,7 +119,7 @@ export const MODULES: Module[] = [
     italicWord: "Action",
     subtitle:
       "Ten tools to move from insight to identity. Inner work becomes outer life.",
-    status: "coming-soon",
+    status: "available",
     workbookPage: "p. 48–60",
     sections: [],
   },
