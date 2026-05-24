@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PublicUser } from "@/lib/auth";
+import { isAdminUser } from "@/lib/admin";
 import { btnPrimarySm } from "@/lib/ui";
 import BrandLogo from "./BrandLogo";
 import Monogram from "./Monogram";
@@ -8,7 +9,8 @@ import LogoutButton from "./LogoutButton";
 const navLink =
   "whitespace-nowrap font-sans text-[13px] text-navy/70 transition-colors duration-150 hover:text-cyan-deep";
 
-export default function SiteHeader({ user }: { user: PublicUser | null }) {
+export default async function SiteHeader({ user }: { user: PublicUser | null }) {
+  const admin = user ? await isAdminUser(user) : false;
   return (
     <header className="sticky top-0 z-50 border-b border-navy/10 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -44,6 +46,14 @@ export default function SiteHeader({ user }: { user: PublicUser | null }) {
               <Link href="/account" className={`hidden sm:inline ${navLink}`}>
                 Account
               </Link>
+              {admin && (
+                <Link
+                  href="/admin/coach-content"
+                  className={`hidden sm:inline ${navLink}`}
+                >
+                  Admin
+                </Link>
+              )}
               <LogoutButton />
               <Link href="/assessment" className={btnPrimarySm}>
                 New check-in

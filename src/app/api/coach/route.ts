@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getCurrentUser } from "@/lib/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { COACH_IDENTITY } from "@/lib/coach/prompt";
+import { FRAMEWORK_LIBRARY } from "@/lib/coach/frameworks";
+import { buildContentBlock } from "@/lib/coach/content";
 import { buildUserContext } from "@/lib/coach/context";
 import {
   addMessage,
@@ -76,9 +78,17 @@ export async function POST(req: NextRequest) {
   const priorMessages = await listMessages(conversationId);
   await addMessage(conversationId, "user", userMessage);
 
-  // Build the per-user context block (cached separately from the
-  // frozen identity block — see lib/coach/prompt.ts for why).
-  const userContext = await buildUserContext(user.id);
+  // Assemble the four cached system blocks. Each gets its own
+  // cache_control breakpoint so the prefix cache hits as much as
+  // possible across requests. Stability ordering, most stable first:
+  //   1. COACH_IDENTITY — frozen across all users, all turns.
+  //   2. FRAMEWORK_LIBRARY — frozen across all users (changes only on deploy).
+  //   3. Brent's content library — refreshes only when Brent edits content.
+  //   4. Per-user context — refreshes when the user updates their curriculum data.
+  const [contentBlock, userContext] = await Promise.all([
+    buildContentBlock(),
+    buildUserContext(user.id),
+  ]);
 
   const anthropicMessages: Anthropic.MessageParam[] = [
     ...priorMessages.map((m) => ({
@@ -107,14 +117,23 @@ export async function POST(req: NextRequest) {
         const responseStream = client.messages.stream({
           model: COACH_MODEL,
           max_tokens: MAX_TOKENS,
-          // Two cache breakpoints — see SKILL guidance on prompt caching.
-          // Block 1 is identical for every user, every turn.
-          // Block 2 is identical for this user across the whole
-          // conversation (changes only when their curriculum data changes).
+          // Four-block system prompt with four cache breakpoints (the
+          // max). Ordered by stability — most stable first — so the
+          // prefix cache hits maximally.
           system: [
             {
               type: "text",
               text: COACH_IDENTITY,
+              cache_control: { type: "ephemeral" },
+            },
+            {
+              type: "text",
+              text: FRAMEWORK_LIBRARY,
+              cache_control: { type: "ephemeral" },
+            },
+            {
+              type: "text",
+              text: contentBlock,
               cache_control: { type: "ephemeral" },
             },
             {

@@ -161,6 +161,21 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_chat_messages_conv
      ON chat_messages(conversation_id, id)`,
+  `CREATE TABLE IF NOT EXISTS coach_content (
+     id TEXT PRIMARY KEY,
+     kind TEXT NOT NULL,
+     title TEXT NOT NULL,
+     body TEXT NOT NULL,
+     source TEXT,
+     tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+     is_active BOOLEAN NOT NULL DEFAULT true,
+     sort_order INT NOT NULL DEFAULT 100,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_coach_content_kind
+     ON coach_content(kind, is_active, sort_order)`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false`,
   // Additive column migrations — safe and idempotent
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_started_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_completed_at TIMESTAMPTZ`,
