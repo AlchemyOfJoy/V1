@@ -117,25 +117,45 @@ export const WEEKS: WeekFocus[] = [
 
 export const TOTAL_DAYS = 90;
 
+export type ChallengeMode = "challenge" | "practice" | "free";
+
 export interface ChallengeStatus {
+  mode: ChallengeMode;
   started_at: string | null;
-  current_day: number; // 0 if not started, else 1..90, or 91 if completed
+  /** The next uncompleted day — i.e. days-of-work-done + 1. Capped at 91. */
+  current_day: number;
+  /** Calendar day since challenge_started_at (1-based). */
+  expected_day: number;
+  /** Positive when calendar has moved past work — Cadence Directive §3.2. */
+  behind_by_days: number;
   completed_at: string | null;
   total_checkins: number;
 }
 
+/**
+ * Compute the user's Challenge state per the Cadence Directive.
+ *
+ * Critical reframe: `current_day` is *days of work done + 1*, not the
+ * calendar day. If a user misses days, the count waits for them; the
+ * day they next complete becomes their current_day.
+ */
 export async function getChallengeStatus(
   userId: string,
 ): Promise<ChallengeStatus> {
   const rows = await query<{
     challenge_started_at: string | Date | null;
     challenge_completed_at: string | Date | null;
+    challenge_mode: string | null;
     total: string;
+    max_day: number | null;
   }>(
     `SELECT u.challenge_started_at,
-            NULL::timestamptz AS challenge_completed_at,
+            u.challenge_completed_at,
+            u.challenge_mode,
             (SELECT COUNT(*)::text FROM challenge_checkins
-              WHERE user_id = u.id) AS total
+              WHERE user_id = u.id) AS total,
+            (SELECT MAX(day_number) FROM challenge_checkins
+              WHERE user_id = u.id) AS max_day
        FROM users u
       WHERE u.id = $1`,
     [userId],
@@ -147,19 +167,72 @@ export async function getChallengeStatus(
       ? startedAt.toISOString()
       : startedAt
     : null;
-  let currentDay = 0;
+  const completedAt = row?.challenge_completed_at ?? null;
+  const completedAtIso = completedAt
+    ? completedAt instanceof Date
+      ? completedAt.toISOString()
+      : completedAt
+    : null;
+  const mode = ((row?.challenge_mode as ChallengeMode) ?? "challenge");
+
+  const maxDayDone = row?.max_day ?? 0;
+  const currentDay = startedAtIso
+    ? Math.min(TOTAL_DAYS + 1, maxDayDone + 1)
+    : 0;
+
+  let expectedDay = 0;
   if (startedAtIso) {
     const startMs = new Date(startedAtIso).setHours(0, 0, 0, 0);
     const today = new Date().setHours(0, 0, 0, 0);
-    const diffDays = Math.floor((today - startMs) / 86_400_000);
-    currentDay = Math.max(1, Math.min(TOTAL_DAYS, diffDays + 1));
+    expectedDay = Math.min(
+      TOTAL_DAYS + 1,
+      Math.max(1, Math.floor((today - startMs) / 86_400_000) + 1),
+    );
   }
+  const behindByDays = Math.max(0, expectedDay - currentDay);
+
   return {
+    mode,
     started_at: startedAtIso,
     current_day: currentDay,
-    completed_at: null,
+    expected_day: expectedDay,
+    behind_by_days: behindByDays,
+    completed_at: completedAtIso,
     total_checkins: Number(row?.total ?? 0),
   };
+}
+
+export async function setChallengeMode(
+  userId: string,
+  mode: ChallengeMode,
+): Promise<void> {
+  await query(
+    `UPDATE users SET challenge_mode = $2 WHERE id = $1`,
+    [userId, mode],
+  );
+  // Switching INTO challenge mode without a start date kicks one off
+  if (mode === "challenge") {
+    await query(
+      `UPDATE users
+          SET challenge_started_at = COALESCE(challenge_started_at, now())
+        WHERE id = $1`,
+      [userId],
+    );
+  }
+}
+
+/** Mark the Challenge complete — fires on Day 90 close. */
+export async function markChallengeCompleted(userId: string): Promise<void> {
+  await query(
+    `UPDATE users
+        SET challenge_completed_at = COALESCE(challenge_completed_at, now()),
+            challenge_mode = CASE
+              WHEN challenge_mode = 'challenge' THEN 'practice'
+              ELSE challenge_mode
+            END
+      WHERE id = $1`,
+    [userId],
+  );
 }
 
 export async function startChallenge(userId: string): Promise<void> {

@@ -1,23 +1,21 @@
 import { query } from "./db";
-import { getCheckin, getChallengeStatus } from "./challenge";
-import { getDayTask } from "./challenge-days";
+import { getCheckin, getChallengeStatus, type ChallengeMode } from "./challenge";
+import { getDayTask, isRestDay, phaseForDay } from "./challenge-days";
 import { getTodayPulse } from "./joy-pulse";
 import { listJoyItems } from "./list-of-joy";
 import { todayDrop } from "./daily-drop";
 
 /**
- * The Daily Session decision tree + card data (Flow Overhaul Directive §3).
+ * Daily Session card resolution per the Cadence Directive §3 / §4 / §5.
  *
- * Computes the full sequence of cards the user will walk through this
- * session, based on:
- *   • time of day (morning vs evening flow)
- *   • what's already done today (pulse logged, day logged)
- *   • whether they have a SubScript, an active Journey resume point
- *   • whether a letter from past self has arrived today
- *   • their current 90-Day arc day
+ * The card arc adapts to the user's mode:
+ *   • Challenge Mode  — Card 3 prescribes THIS day's work from the cadence.
+ *                       Missed-day prompt overrides if behind_by_days > 0.
+ *                       Rest days show a calm "today is rest" card.
+ *   • Practice Mode   — Card 3 surfaces ONE suggested deepening / ritual.
+ *   • Free Mode       — Card 3 invites Challenge commitment + one practice.
  *
- * Per the directive: one card on screen at a time. The app makes the
- * choice; the user just advances.
+ * Cards are returned as a flat sequence the client walks one-at-a-time.
  */
 
 export interface JoyDrop {
@@ -29,27 +27,29 @@ export interface JoyDrop {
 
 export type CardKind =
   | "letter"
+  | "missed_days"
   | "greeting"
   | "joy_pulse"
   | "morning_ritual"
   | "evening_ritual"
   | "whats_next"
+  | "rest_day"
+  | "free_invite"
+  | "practice_suggestion"
+  | "graduation"
   | "joy_glimpse"
   | "close";
 
 export interface SessionCard {
   kind: CardKind;
-  // Card-specific payload
   payload?: Record<string, unknown>;
 }
 
 export interface DailySessionData {
+  mode: ChallengeMode;
   firstName: string;
   currentDay: number | null;
   isEvening: boolean;
-  joyDrop: JoyDrop;
-  pulseAlreadyLogged: boolean;
-  joySamples: { id: string; content: string }[];
   cards: SessionCard[];
 }
 
@@ -62,7 +62,7 @@ export async function getDailySession(opts: {
   const hour = now.getHours();
   const isEvening = hour >= 18;
 
-  const [drop, pulse, joyItems, challenge, activeSub, nameRow, favRows, letterRows] =
+  const [drop, pulse, joyItems, challenge, activeSub, nameRow, letterRows] =
     await Promise.all([
       todayDrop(),
       getTodayPulse(opts.userId),
@@ -77,10 +77,6 @@ export async function getDailySession(opts: {
         [opts.userId],
       ),
       query<{ id: string }>(
-        `SELECT id FROM quote_favorites WHERE user_id = $1 LIMIT 1`,
-        [opts.userId],
-      ),
-      query<{ id: string }>(
         `SELECT id::text AS id FROM letters_to_self
            WHERE user_id = $1
              AND send_at <= now()
@@ -91,15 +87,13 @@ export async function getDailySession(opts: {
       ),
     ]);
 
+  const mode = challenge.mode;
   const firstName =
     nameRow[0]?.name?.split(" ")[0] ?? opts.email.split("@")[0];
-  const dayNumber = challenge.started_at ? challenge.current_day : null;
-  const todayCheckin =
-    dayNumber !== null ? await getCheckin(opts.userId, dayNumber) : null;
-  const todayLogged = todayCheckin !== null;
+  const currentDay = challenge.current_day > 0 ? challenge.current_day : null;
+  const isGraduated = challenge.current_day > 90 || !!challenge.completed_at;
   const hasSubscript = activeSub.length > 0;
 
-  // Joy Drop favorite check is cheap
   let savedDrop = false;
   if (!drop.id.startsWith("studio:")) {
     const r = await query<{ id: string }>(
@@ -109,9 +103,7 @@ export async function getDailySession(opts: {
     );
     savedDrop = r.length > 0;
   }
-  void favRows;
 
-  // Deterministic three-from-list sample
   const seed = now.getDate() + now.getMonth() * 31;
   const joySamples = [...joyItems]
     .sort(
@@ -121,10 +113,16 @@ export async function getDailySession(opts: {
     .slice(0, 3)
     .map((j) => ({ id: String(j.id), content: j.content }));
 
+  // Has user already done today's day-work? (For Challenge Mode)
+  const todayCheckin =
+    currentDay !== null && currentDay <= 90
+      ? await getCheckin(opts.userId, currentDay)
+      : null;
+  const todayLogged = todayCheckin !== null;
+
   const cards: SessionCard[] = [];
 
-  // Letter override — if a letter arrived in the last 24h and is unread,
-  // it becomes the very first card.
+  // Letter override — takes the very first slot per Directive §12
   if (letterRows[0]) {
     cards.push({
       kind: "letter",
@@ -132,93 +130,160 @@ export async function getDailySession(opts: {
     });
   }
 
-  // Greeting + Joy Drop — always
+  // Missed-days override (Challenge Mode only). The Challenge is patient
+  // (§3.2). Prompt to pick up the missed day or skip ahead.
+  if (
+    mode === "challenge" &&
+    !isGraduated &&
+    challenge.behind_by_days > 0 &&
+    currentDay !== null
+  ) {
+    const skipTo = Math.min(90, currentDay + challenge.behind_by_days);
+    cards.push({
+      kind: "missed_days",
+      payload: {
+        currentDay,
+        gap: challenge.behind_by_days,
+        skipTo,
+      },
+    });
+  }
+
+  // Greeting + Joy Drop — always, but the day marker varies by mode
   cards.push({
     kind: "greeting",
     payload: {
       firstName,
-      currentDay: dayNumber,
+      currentDay,
+      mode,
+      isGraduated,
       drop: { id: drop.id, body: drop.body, source: drop.source, saved: savedDrop },
     },
   });
 
-  // Pulse — only if not logged today
-  if (!pulse) {
-    cards.push({ kind: "joy_pulse" });
-  }
+  // Pulse — only if not yet logged
+  if (!pulse) cards.push({ kind: "joy_pulse" });
 
-  // Morning vs Evening ritual
-  if (isEvening) {
-    cards.push({
-      kind: "evening_ritual",
-      payload: { hasSubscript },
-    });
-  } else {
-    // Only show morning ritual card if there's something useful to do
-    if (hasSubscript || !todayLogged) {
+  // Card 3 — mode-aware "what to do today"
+  if (mode === "challenge" && !isGraduated && currentDay !== null) {
+    if (isRestDay(currentDay)) {
       cards.push({
-        kind: "morning_ritual",
-        payload: { hasSubscript },
+        kind: "rest_day",
+        payload: {
+          day: currentDay,
+          phase: phaseForDay(currentDay)?.title ?? null,
+        },
       });
+    } else if (!todayLogged) {
+      const task = getDayTask(currentDay);
+      if (task) {
+        cards.push({
+          kind: "whats_next",
+          payload: {
+            eyebrow: `Day ${currentDay} · ${phaseForDay(currentDay)?.title ?? ""}`,
+            title: task.title,
+            subtitle: task.description,
+            href: task.primaryHref,
+            primaryLabel: task.primaryLabel,
+            estimatedMin: task.estimatedMin,
+            isMilestone: task.isMilestone,
+          },
+        });
+      }
     }
-  }
-
-  // What's Next — surface day task or maintenance suggestion
-  const task =
-    dayNumber !== null && dayNumber >= 1 && dayNumber <= 90
-      ? getDayTask(dayNumber)
-      : null;
-  if (task && !todayLogged) {
+  } else if (mode === "challenge" && isGraduated) {
+    // Day-90 first open after completion
+    cards.push({ kind: "graduation", payload: {} });
+  } else if (mode === "practice") {
     cards.push({
-      kind: "whats_next",
-      payload: {
-        eyebrow: `Day ${dayNumber} of 90`,
-        title: task.title,
-        subtitle: task.description,
-        href: task.primaryHref,
-        primaryLabel: task.primaryLabel,
-        estimatedMin: task.estimatedMin,
-        isMilestone: task.isMilestone,
-      },
+      kind: "practice_suggestion",
+      payload: await practiceSuggestion(opts.userId, hasSubscript),
     });
-  } else if (dayNumber !== null && dayNumber > 90) {
+  } else if (mode === "free") {
     cards.push({
-      kind: "whats_next",
-      payload: {
-        eyebrow: "The practice continues",
-        title: "Take a Spirit Walk today",
-        subtitle: "Twenty minutes outside, no headphones.",
-        href: "/curriculum/toolkit",
-        primaryLabel: "Open the Tool Kit",
-        estimatedMin: 20,
-      },
+      kind: "free_invite",
+      payload: {},
     });
   }
 
-  // Joy glimpse — always (the soft prompt invites an add even if empty)
+  // Card 4 — Daily Rituals (SubScript / ITT). Bundled into one card.
+  if (isEvening) {
+    cards.push({ kind: "evening_ritual", payload: { hasSubscript } });
+  } else if (hasSubscript || mode === "challenge") {
+    cards.push({ kind: "morning_ritual", payload: { hasSubscript } });
+  }
+
+  // Card 5 — Joy glimpse
   cards.push({
     kind: "joy_glimpse",
     payload: { samples: joySamples },
   });
 
-  // Close — permission to stop
+  // Card 6 — Close. Copy varies by mode.
   cards.push({
     kind: "close",
-    payload: { isEvening },
+    payload: {
+      isEvening,
+      mode,
+      currentDay,
+      nextDay:
+        mode === "challenge" && currentDay !== null && currentDay < 90
+          ? currentDay + 1
+          : null,
+    },
   });
 
   return {
+    mode,
     firstName,
-    currentDay: dayNumber,
+    currentDay,
     isEvening,
-    joyDrop: {
-      id: drop.id,
-      body: drop.body,
-      source: drop.source,
-      saved: savedDrop,
-    },
-    pulseAlreadyLogged: pulse !== null,
-    joySamples,
     cards,
+  };
+}
+
+/**
+ * Practice Mode card 3 surfaces ONE suggestion based on stale data —
+ * Pillars not re-scored, no recent Joy add, last Self-Eulogy read >90d.
+ */
+async function practiceSuggestion(
+  userId: string,
+  hasSubscript: boolean,
+): Promise<Record<string, unknown>> {
+  // Most recent Pillar snapshot
+  const rows = await query<{ days: number | null }>(
+    `SELECT EXTRACT(DAY FROM (now() -
+        COALESCE((SELECT MAX(taken_at) FROM priority_pillar_snapshots WHERE user_id = $1), 'epoch'::timestamptz)
+      ))::int AS days`,
+    [userId],
+  );
+  const pillarStaleness = rows[0]?.days ?? 9999;
+  if (pillarStaleness > 30) {
+    return {
+      eyebrow: "Time to re-score",
+      title: "Take a pulse on your Pillars",
+      subtitle: `Last scored ${pillarStaleness} days ago. Two minutes.`,
+      href: "/curriculum/module/02-joyful-operating-system/priority-pillars",
+      primaryLabel: "Score now",
+      estimatedMin: 2,
+    };
+  }
+  if (hasSubscript) {
+    return {
+      eyebrow: "The practice",
+      title: "Read your SubScript",
+      subtitle: "The install needs reading, daily. Five minutes.",
+      href: "/curriculum/module/02-joyful-operating-system/subscript",
+      primaryLabel: "Read it",
+      estimatedMin: 5,
+    };
+  }
+  return {
+    eyebrow: "Today",
+    title: "Take a Spirit Walk",
+    subtitle: "Twenty minutes outside, no headphones. Notice three things.",
+    href: "/curriculum/toolkit",
+    primaryLabel: "Browse the Tools",
+    estimatedMin: 20,
   };
 }
