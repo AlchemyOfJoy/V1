@@ -6,6 +6,7 @@ import { btnPrimarySm } from "@/lib/ui";
 import BrandLogo from "./BrandLogo";
 import Monogram from "./Monogram";
 import LogoutButton from "./LogoutButton";
+import HelpButton from "./app/HelpButton";
 
 const navLink =
   "whitespace-nowrap font-sans text-[13px] text-navy/70 transition-colors duration-150 hover:text-cyan-deep";
@@ -38,10 +39,6 @@ export default async function SiteHeader({ user }: { user: PublicUser | null }) 
             priority
             className="hidden h-[21px] w-auto sm:block"
           />
-          <span className="hidden h-5 w-px bg-navy/15 sm:block" />
-          <span className="hidden font-serif text-[17px] font-medium tracking-tight sm:block">
-            Joy Quotient
-          </span>
         </Link>
         <nav className="flex items-center gap-4 sm:gap-7">
           {user ? (
@@ -75,6 +72,7 @@ export default async function SiteHeader({ user }: { user: PublicUser | null }) 
                   Admin
                 </Link>
               )}
+              <HelpButton />
               <LogoutButton />
               <Link href="/assessment" className={btnPrimarySm}>
                 New check-in

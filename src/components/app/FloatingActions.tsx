@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
 import { btnPrimary } from "@/lib/ui";
+import { queuedFetch } from "@/lib/offline-queue";
 
 /**
  * Persistent floating actions on every signed-in screen:
@@ -28,14 +29,25 @@ export default function FloatingActions() {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/curriculum/list-of-joy", {
+      const res = await queuedFetch("/api/curriculum/list-of-joy", {
         method: "POST",
+        kind: "list-of-joy",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok && res.status !== 202) throw new Error();
       const data = await res.json().catch(() => ({}));
       setContent("");
+      // 202 = queued offline. Show a quiet status instead of celebrating.
+      if (data?.queued) {
+        setMsg("Queued — we’ll save it when you’re back online.");
+        window.dispatchEvent(new Event("aoj:queued"));
+        setTimeout(() => {
+          setOpen(false);
+          setMsg(null);
+        }, 1500);
+        return;
+      }
       setMsg("Added ✦");
       router.refresh();
       // If they just crossed a milestone, fire a milestone celebration.

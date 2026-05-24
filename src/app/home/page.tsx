@@ -19,6 +19,10 @@ import WelcomeBack from "@/components/home/WelcomeBack";
 import { Tridot } from "@/components/app/Wave";
 import FavoriteButton from "@/components/library/FavoriteButton";
 import { getCheckin } from "@/lib/challenge";
+import TeachingMoment from "@/components/app/TeachingMoment";
+import { getTutorialFlags } from "@/lib/tutorial-flags";
+import UpNextCard from "@/components/home/UpNextCard";
+import { getUpNext } from "@/lib/up-next";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -44,7 +48,7 @@ export default async function HomePage() {
     redirect("/curriculum/onboarding");
   }
 
-  const [drop, pulse, loop, joyItems, challenge, activeSub, nameRow] =
+  const [drop, pulse, loop, joyItems, challenge, activeSub, nameRow, tutorialFlags] =
     await Promise.all([
       todayDrop(),
       getTodayPulse(user.id),
@@ -56,6 +60,7 @@ export default async function HomePage() {
         [user.id],
       ),
       query<NameRow>(`SELECT name FROM users WHERE id = $1`, [user.id]),
+      getTutorialFlags(user.id),
     ]);
   const favRows = await query<{ id: string }>(
     `SELECT id::text AS id FROM quote_favorites
@@ -68,6 +73,22 @@ export default async function HomePage() {
     nameRow[0]?.name?.split(" ")[0] ?? user.email.split("@")[0];
   const dayNumber = challenge.started_at ? challenge.current_day : null;
   const hasSubscript = activeSub.length > 0;
+
+  // Adaptive Home modes (Build Directive §5.1):
+  //   • Onboarding Mode — first 7 days. Journey "what's next" dominant,
+  //     fewer side-surfaces so the eye doesn't scatter.
+  //   • Active Practice Mode — day 8 through completion. Full Home.
+  //   • Maintenance Mode — post-Integration. Lighter, SubScript-forward,
+  //     no urgent CTAs.
+  const homeMode: "onboarding" | "active" | "maintenance" =
+    dayNumber === null
+      ? "active"
+      : dayNumber <= 7
+        ? "onboarding"
+        : dayNumber > 90
+          ? "maintenance"
+          : "active";
+  const challengeCompleted = homeMode === "maintenance";
   const hour = new Date().getHours();
   const isMorning = hour < 16;
   const todayCheckin = dayNumber !== null ? await getCheckin(user.id, dayNumber) : null;
@@ -92,6 +113,17 @@ export default async function HomePage() {
     dayNumber !== null && !todayLogged
       ? Math.max(0, dayNumber - lastCheckinDay - 1)
       : 0;
+
+  // Up Next — the deterministic single-best-next-thing for this user,
+  // computed server-side so Home is never empty, never ambiguous.
+  const upNext = await getUpNext({
+    userId: user.id,
+    currentDay: dayNumber,
+    todayLogged,
+    hasSubscript,
+    isMorning,
+    challengeCompleted,
+  });
 
   // Deterministic 3-from-list pick
   const threeFromList = (() => {
@@ -122,6 +154,15 @@ export default async function HomePage() {
         <WelcomeBack gapDays={gapDays} currentDay={dayNumber} />
       )}
 
+      {/* First-day teaching card — appears once, dismisses for good */}
+      {homeMode === "onboarding" && (
+        <TeachingMoment
+          flag="first_home_visit"
+          copy="This is Home. Open it any time you want to feel a little better."
+          alreadySeen={tutorialFlags.first_home_visit}
+        />
+      )}
+
       {/* THE HERO MOMENT — quote, full bleed, big */}
       <div className="space-y-3">
         <CoachCard
@@ -142,8 +183,11 @@ export default async function HomePage() {
 
       <Tridot />
 
+      {/* A letter from past self arrived today — top priority. */}
+      {upNext.kind === "letter" && <UpNextCard next={upNext} />}
+
       {/* THE PRIMARY ANCHOR — today's task on the 90-Day arc */}
-      {dayNumber !== null && (
+      {dayNumber !== null && homeMode !== "maintenance" && (
         <TodayCard
           currentDay={dayNumber}
           totalCheckins={challenge.total_checkins}
@@ -151,19 +195,46 @@ export default async function HomePage() {
         />
       )}
 
+      {/* Maintenance Mode — challenge complete; show a lighter recap +
+       *  a quiet next-step from the fallback chain. */}
+      {homeMode === "maintenance" && (
+        <>
+          <section className="rounded-3xl border border-[#C89A3F]/30 bg-[#FAF6EC] p-6 text-center">
+            <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a6d00]">
+              The work continues
+            </p>
+            <p className="mt-2 font-serif text-[18px] italic leading-relaxed text-navy/80">
+              You finished the 90-Day arc. The practice is yours now — light,
+              daily, on your terms.
+            </p>
+          </section>
+          {upNext.kind !== "letter" && <UpNextCard next={upNext} />}
+        </>
+      )}
+
+      {/* If Up Next is something other than a day_task / letter — surface it.
+       *  TodayCard already covers the day_task case for arc users. */}
+      {homeMode !== "maintenance" &&
+        upNext.kind !== "letter" &&
+        upNext.kind !== "day_task" && <UpNextCard next={upNext} />}
+
       {/* SubScript daily ritual reminder */}
       <PrimaryAction hasSubscript={hasSubscript} isMorning={isMorning} />
 
-      {/* Quick-start chips — three time-boxed entry points for in-the-moment */}
-      <QuickStartChips />
+      {/* Quick-start chips — three time-boxed entry points for in-the-moment.
+       *  Hidden in Onboarding Mode so the eye stays on the day's task. */}
+      {homeMode !== "onboarding" && <QuickStartChips />}
 
       {/* Joy Pulse — quiet, no header explainer */}
       <section className="rounded-3xl border border-navy/10 bg-white p-5">
         <JoyPulseControl initialScore={pulse?.score ?? null} />
       </section>
 
-      {/* Three from your list — minimal, beautiful */}
-      <ThreeJoys items={threeFromList} />
+      {/* Three from your list — minimal, beautiful. Suppressed in
+       *  Onboarding Mode if the user hasn't yet built a list of three. */}
+      {!(homeMode === "onboarding" && joyItems.length < 3) && (
+        <ThreeJoys items={threeFromList} />
+      )}
 
       {/* What you've done today — the momentum recap */}
       <TodaysWins

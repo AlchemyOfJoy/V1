@@ -6,6 +6,8 @@ import { listForgivenessSubjects } from "@/lib/forgiveness";
 import WorksheetShell from "@/components/curriculum/WorksheetShell";
 import ForgivenessContent from "@/content/workbook/module-03-forgiveness";
 import ForgivenessList from "@/components/curriculum/ForgivenessList";
+import TeachingMoment from "@/components/app/TeachingMoment";
+import { getTutorialFlags } from "@/lib/tutorial-flags";
 
 export const metadata: Metadata = {
   title: "Module 3 — Forgiveness Framework",
@@ -19,7 +21,10 @@ export default async function Module03Page() {
   const mod = findModule("03-forgiveness");
   if (!mod) redirect("/curriculum");
 
-  const subjects = await listForgivenessSubjects(user.id);
+  const [subjects, flags] = await Promise.all([
+    listForgivenessSubjects(user.id),
+    getTutorialFlags(user.id),
+  ]);
   const serializable = subjects.map((s) => ({
     id: String(s.id),
     subject_name: s.subject_name,
@@ -48,6 +53,11 @@ export default async function Module03Page() {
             "Begin one subject at a time. A name, a nickname, &lsquo;someone close to me&rsquo;, even &lsquo;myself&rsquo; — your call. Move through Victim Rant → Empath Rave → Universal Meaning → Forgiveness Statement. Your work is visible only to you. You can delete it any time.",
         }}
       >
+        <TeachingMoment
+          flag="first_sacred_entry"
+          copy="Different work, different room. Take your time."
+          alreadySeen={flags.first_sacred_entry}
+        />
         <ForgivenessContent />
         <ForgivenessList initialSubjects={serializable} />
       </WorksheetShell>

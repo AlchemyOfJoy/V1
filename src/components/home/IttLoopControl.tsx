@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
+import { queuedFetch } from "@/lib/offline-queue";
 
 const inputClass =
   "w-full rounded-xl border border-navy/15 bg-white px-4 py-2.5 font-sans text-[14px] text-navy outline-none transition placeholder:text-navy/35 focus:border-cyan-deep focus:ring-2 focus:ring-cyan-deep/25";
@@ -50,8 +51,9 @@ export default function IttLoopControl({
     setBusy(true);
     setSavedMsg(null);
     try {
-      const res = await fetch("/api/itt-loop", {
+      const res = await queuedFetch("/api/itt-loop", {
         method: "POST",
+        kind: "itt-loop",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phase: "morning",
@@ -60,7 +62,13 @@ export default function IttLoopControl({
           action,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok && res.status !== 202) throw new Error();
+      const data = await res.json().catch(() => ({}));
+      if (data?.queued) {
+        window.dispatchEvent(new Event("aoj:queued"));
+        setSavedMsg("Saved locally — syncs when you’re back online.");
+        return;
+      }
       setSavedMsg("Set for today ✦");
       router.refresh();
     } catch {
@@ -75,8 +83,9 @@ export default function IttLoopControl({
     setBusy(true);
     setSavedMsg(null);
     try {
-      const res = await fetch("/api/itt-loop", {
+      const res = await queuedFetch("/api/itt-loop", {
         method: "POST",
+        kind: "itt-loop",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phase: "evening",
@@ -84,7 +93,13 @@ export default function IttLoopControl({
           evening_notes: notes,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok && res.status !== 202) throw new Error();
+      const data = await res.json().catch(() => ({}));
+      if (data?.queued) {
+        window.dispatchEvent(new Event("aoj:queued"));
+        setSavedMsg("Saved locally — syncs when you’re back online.");
+        return;
+      }
       setSavedMsg("Closed the loop ✦");
       // Micro-celebration — daily small win
       celebrate({

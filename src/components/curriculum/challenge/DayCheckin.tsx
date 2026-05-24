@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { btnPrimary } from "@/lib/ui";
 import { formatSavedAt } from "../useWorksheetSave";
 import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
+import { queuedFetch } from "@/lib/offline-queue";
 
 const MILESTONE_DAYS = new Set([1, 7, 14, 21, 28, 30, 42, 56, 60, 84, 90]);
 
@@ -58,16 +59,22 @@ export default function DayCheckin({
       setSaving(true);
       setError(null);
       try {
-        const res = await fetch(
+        const res = await queuedFetch(
           `/api/curriculum/challenge/checkin/${day}`,
           {
             method: "POST",
+            kind: "challenge",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           },
         );
-        if (!res.ok) throw new Error();
+        if (!res.ok && res.status !== 202) throw new Error();
+        const data = await res.json().catch(() => ({}));
         setSavedAt(new Date());
+        if (data?.queued) {
+          window.dispatchEvent(new Event("aoj:queued"));
+          setError("Saved locally — we’ll sync when you’re back online.");
+        }
       } catch {
         setError("Couldn't save — will retry on next change.");
       } finally {
@@ -87,7 +94,7 @@ export default function DayCheckin({
         size: "major",
         eyebrow: "Day 90",
         primary: "You ran the system for ninety days.",
-        secondary: "Tell me you&apos;re not changed.",
+        secondary: "Tell me you’re not changed.",
       });
     } else if (isMilestone) {
       celebrate({

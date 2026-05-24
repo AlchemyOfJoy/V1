@@ -20,10 +20,10 @@ export default function WelcomeBack({
       </p>
       <p className="mt-2 font-serif text-[17px] italic leading-relaxed text-navy/75">
         {gapDays < 7
-          ? `It&apos;s been a few days. The work was here waiting.`
+          ? `It’s been a few days. The work was here waiting.`
           : gapDays < 21
-            ? `It&apos;s been a couple of weeks. Pick up wherever feels right — no streak to recover.`
-            : `Glad you&apos;re back. The work is still here. You&apos;re on Day ${currentDay} — start where you are.`}
+            ? `It’s been a couple of weeks. Pick up wherever feels right — no streak to recover.`
+            : `Glad you’re back. The work is still here. You’re on Day ${currentDay} — start where you are.`}
       </p>
     </section>
   );
