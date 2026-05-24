@@ -4,6 +4,8 @@ import { JOURNEY, type IttPillar } from "@/lib/itt";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
 import IttDiagram from "@/components/app/IttDiagram";
+import { getChallengeStatus, WEEKS } from "@/lib/challenge";
+import { getDayTask } from "@/lib/challenge-days";
 
 export const metadata: Metadata = { title: "Journey", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -23,6 +25,13 @@ export default async function JourneyPage() {
        WHERE user_id = $1 AND completed_at IS NOT NULL`,
     [user.id],
   );
+  const challenge = await getChallengeStatus(user.id);
+  const currentDay = challenge.started_at ? challenge.current_day : 1;
+  const currentWeek = WEEKS.find(
+    (w) => w.week === Math.ceil(currentDay / 7),
+  );
+  const todayTask = getDayTask(currentDay);
+
   const doneIds = new Set(completed.map((r) => r.worksheet_id));
   const sectionDone: Record<string, boolean> = {
     "core-narrative": doneIds.has("02_core_narrative"),
@@ -34,15 +43,121 @@ export default async function JourneyPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-5 pb-12 pt-6 sm:pt-10">
-      {/* Visual ITT framework at the top — replaces the paragraph of explanation */}
-      <header className="space-y-4">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
-          The ITT Framework
-        </p>
+      {/* The 90-Day arc — front and center, the spine of how the app is used */}
+      <header className="space-y-5">
+        <div>
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
+            Your 90-Day arc
+          </p>
+          <h1 className="mt-2 font-serif text-[32px] font-medium leading-tight tracking-tight text-navy sm:text-[40px]">
+            Day <em className="text-cyan-deep">{currentDay}</em>
+            <span className="font-sans text-[18px] font-light text-navy/45">
+              {" "}
+              of 90
+            </span>
+          </h1>
+          {currentWeek && (
+            <p className="mt-2 font-serif text-[16px] italic text-navy/65">
+              Week {currentWeek.week} · {currentWeek.title} —{" "}
+              {currentWeek.focus.toLowerCase()}
+            </p>
+          )}
+        </div>
+        {todayTask && (
+          <Link
+            href={`/curriculum/90-day-challenge/day/${currentDay}`}
+            className={`group block rounded-3xl border p-5 transition ${
+              todayTask.isMilestone
+                ? "border-[#C89A3F]/40 bg-gradient-to-br from-[#FAF6EC] to-white hover:border-[#C89A3F]/70"
+                : "border-cyan-deep/30 bg-gradient-to-br from-mist to-white hover:border-cyan-deep/60"
+            }`}
+          >
+            <p
+              className={`font-sans text-[10px] font-semibold uppercase tracking-[0.22em] ${
+                todayTask.isMilestone ? "text-[#8a6d00]" : "text-cyan-deep"
+              }`}
+            >
+              Today
+              {todayTask.isMilestone ? " · milestone" : ""}
+            </p>
+            <p className="mt-1 font-serif text-[20px] font-medium text-navy">
+              {todayTask.title}
+            </p>
+            <p className="mt-1 font-sans text-[12px] font-light text-navy/55">
+              ~{todayTask.estimatedMin} min · tap to open the day
+            </p>
+          </Link>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-mist">
+            <div
+              className="h-full bg-cyan-deep transition-all"
+              style={{ width: `${(currentDay / 90) * 100}%` }}
+            />
+          </div>
+          <Link
+            href="/curriculum/90-day-challenge"
+            className="font-sans text-[12px] font-semibold text-cyan-deep hover:underline whitespace-nowrap"
+          >
+            See all 90 →
+          </Link>
+        </div>
+      </header>
+
+      {/* The 13-week arc summary — what's coming */}
+      <section>
+        <h2 className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-navy/55">
+          The 13-week arc
+        </h2>
+        <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+          {WEEKS.map((w) => {
+            const status =
+              currentWeek && w.week < currentWeek.week
+                ? "past"
+                : currentWeek && w.week === currentWeek.week
+                  ? "current"
+                  : "ahead";
+            return (
+              <li
+                key={w.week}
+                className={`rounded-xl border p-3 ${
+                  status === "current"
+                    ? "border-cyan-deep/40 bg-mist"
+                    : status === "past"
+                      ? "border-cyan-deep/20 bg-white"
+                      : "border-navy/10 bg-white"
+                }`}
+              >
+                <p
+                  className={`font-sans text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                    status === "current"
+                      ? "text-cyan-deep"
+                      : status === "past"
+                        ? "text-navy/45"
+                        : "text-navy/35"
+                  }`}
+                >
+                  Week {w.week}
+                  {status === "past" ? " · done" : status === "current" ? " · now" : ""}
+                </p>
+                <p className="mt-0.5 font-serif text-[14px] font-medium text-navy">
+                  {w.title}
+                </p>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      {/* Deeper reference — the ITT framework + curriculum modules */}
+      <section className="space-y-4">
+        <h2 className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-navy/55">
+          The methodology beneath the arc
+        </h2>
         <div className="rounded-3xl border border-navy/10 bg-gradient-to-br from-mist/60 to-white p-4 sm:p-6">
           <IttDiagram className="mx-auto max-w-md" />
         </div>
-      </header>
+      </section>
 
       {/* Pillars */}
       <ol className="space-y-4">

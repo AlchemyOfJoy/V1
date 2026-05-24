@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { todayDrop } from "@/lib/daily-drop";
 import { getTodayPulse } from "@/lib/joy-pulse";
@@ -11,7 +12,13 @@ import CoachCard from "@/components/app/CoachCard";
 import JoyPulseControl from "@/components/home/JoyPulseControl";
 import IttLoopControl from "@/components/home/IttLoopControl";
 import PrimaryAction from "@/components/home/PrimaryAction";
+import QuickStartChips from "@/components/home/QuickStartChips";
+import TodayCard from "@/components/home/TodayCard";
+import TodaysWins from "@/components/home/TodaysWins";
+import WelcomeBack from "@/components/home/WelcomeBack";
 import { Tridot } from "@/components/app/Wave";
+import FavoriteButton from "@/components/library/FavoriteButton";
+import { getCheckin } from "@/lib/challenge";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -26,6 +33,17 @@ interface NameRow {
 
 export default async function HomePage() {
   const user = (await getCurrentUser())!;
+  // Onboarding gate — anyone who hasn't completed the 7-screen tutorial
+  // gets routed there first. Sets the narrative ("you're on Day 1 of
+  // a 90-day arc") before they land on Home.
+  const onboardCheck = await query<{ curriculum_started_at: string | Date | null }>(
+    `SELECT curriculum_started_at FROM users WHERE id = $1`,
+    [user.id],
+  );
+  if (!onboardCheck[0]?.curriculum_started_at) {
+    redirect("/curriculum/onboarding");
+  }
+
   const [drop, pulse, loop, joyItems, challenge, activeSub, nameRow] =
     await Promise.all([
       todayDrop(),
@@ -39,6 +57,12 @@ export default async function HomePage() {
       ),
       query<NameRow>(`SELECT name FROM users WHERE id = $1`, [user.id]),
     ]);
+  const favRows = await query<{ id: string }>(
+    `SELECT id::text AS id FROM quote_favorites
+       WHERE user_id = $1 AND quote_id = $2 LIMIT 1`,
+    [user.id, drop.id],
+  );
+  const isFavorited = favRows.length > 0;
 
   const firstName =
     nameRow[0]?.name?.split(" ")[0] ?? user.email.split("@")[0];
@@ -46,6 +70,28 @@ export default async function HomePage() {
   const hasSubscript = activeSub.length > 0;
   const hour = new Date().getHours();
   const isMorning = hour < 16;
+  const todayCheckin = dayNumber !== null ? await getCheckin(user.id, dayNumber) : null;
+  const todayLogged = todayCheckin !== null;
+  const ittLoopClosed =
+    loop !== null && loop.action_status !== null && loop.action_status !== "pending";
+  const joyItemsToday = joyItems.filter((j) => {
+    const created =
+      j.created_at instanceof Date ? j.created_at : new Date(j.created_at);
+    return (
+      created.toDateString() === new Date().toDateString()
+    );
+  }).length;
+
+  // Welcome-back signal — gap in days between current_day and last check-in
+  const gapRows = await query<{ last_day: number | null }>(
+    `SELECT MAX(day_number) AS last_day FROM challenge_checkins WHERE user_id = $1`,
+    [user.id],
+  );
+  const lastCheckinDay = gapRows[0]?.last_day ?? 0;
+  const gapDays =
+    dayNumber !== null && !todayLogged
+      ? Math.max(0, dayNumber - lastCheckinDay - 1)
+      : 0;
 
   // Deterministic 3-from-list pick
   const threeFromList = (() => {
@@ -71,21 +117,45 @@ export default async function HomePage() {
         )}
       </header>
 
+      {/* Gentle re-entry if user has been gone */}
+      {dayNumber !== null && gapDays >= 3 && (
+        <WelcomeBack gapDays={gapDays} currentDay={dayNumber} />
+      )}
+
       {/* THE HERO MOMENT — quote, full bleed, big */}
-      <CoachCard
-        size="hero"
-        eyebrow="Today's Joy Drop"
-        body={drop.body}
-        source={drop.source ?? undefined}
-      />
+      <div className="space-y-3">
+        <CoachCard
+          size="hero"
+          eyebrow="Today's Joy Drop"
+          body={drop.body}
+          source={drop.source ?? undefined}
+        />
+        {!drop.id.startsWith("studio:") && (
+          <div className="flex justify-end">
+            <FavoriteButton
+              quoteId={drop.id}
+              initialSaved={isFavorited}
+            />
+          </div>
+        )}
+      </div>
 
       <Tridot />
 
-      {/* THE SINGLE PRIMARY ACTION */}
+      {/* THE PRIMARY ANCHOR — today's task on the 90-Day arc */}
+      {dayNumber !== null && (
+        <TodayCard
+          currentDay={dayNumber}
+          totalCheckins={challenge.total_checkins}
+          todayLogged={todayLogged}
+        />
+      )}
+
+      {/* SubScript daily ritual reminder */}
       <PrimaryAction hasSubscript={hasSubscript} isMorning={isMorning} />
 
-      {/* WHAT'S NEXT (compact pill) */}
-      <WhatsNext />
+      {/* Quick-start chips — three time-boxed entry points for in-the-moment */}
+      <QuickStartChips />
 
       {/* Joy Pulse — quiet, no header explainer */}
       <section className="rounded-3xl border border-navy/10 bg-white p-5">
@@ -94,6 +164,14 @@ export default async function HomePage() {
 
       {/* Three from your list — minimal, beautiful */}
       <ThreeJoys items={threeFromList} />
+
+      {/* What you've done today — the momentum recap */}
+      <TodaysWins
+        pulseLogged={pulse !== null}
+        challengeDayLogged={todayLogged}
+        ittLoopClosed={ittLoopClosed}
+        joyItemsAddedToday={joyItemsToday}
+      />
 
       {/* ITT loop — collapsed by default behind a details */}
       <details className="group rounded-3xl border border-navy/10 bg-mist/30 px-5 py-4">
@@ -167,66 +245,6 @@ function ThreeJoys({ items }: { items: { id: string; content: string }[] }) {
   );
 }
 
-async function WhatsNext() {
-  const user = (await getCurrentUser())!;
-  const completed = await query<{ worksheet_id: string }>(
-    `SELECT worksheet_id FROM worksheet_responses
-       WHERE user_id = $1 AND completed_at IS NOT NULL`,
-    [user.id],
-  );
-  const done = new Set(completed.map((r) => r.worksheet_id));
-  const path = [
-    {
-      id: "02_core_narrative",
-      title: "Core Narrative",
-      href: "/curriculum/module/02-joyful-operating-system/core-narrative",
-      min: 45,
-    },
-    {
-      id: "02_self_eulogy",
-      title: "Self-Eulogy",
-      href: "/curriculum/module/02-joyful-operating-system/self-eulogy",
-      min: 60,
-    },
-    {
-      id: "02_list_of_joy",
-      title: "List of Joy",
-      href: "/curriculum/module/02-joyful-operating-system/list-of-joy",
-      min: 20,
-    },
-    {
-      id: "02_priority_pillars",
-      title: "Priority Pillars",
-      href: "/curriculum/module/02-joyful-operating-system/priority-pillars",
-      min: 15,
-    },
-    {
-      id: "02_subscript",
-      title: "SubScript",
-      href: "/curriculum/module/02-joyful-operating-system/subscript",
-      min: 30,
-    },
-  ];
-  const next = path.find((p) => !done.has(p.id));
-  if (!next) return null;
-
-  return (
-    <Link
-      href={next.href}
-      className="flex items-center justify-between gap-4 rounded-2xl bg-mist px-5 py-3.5 transition hover:bg-mist/70"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-navy/45">
-          Next on the journey
-        </p>
-        <p className="mt-0.5 truncate font-serif text-[17px] font-medium text-navy">
-          {next.title}
-          <span className="ml-2 font-sans text-[12px] font-light text-navy/45">
-            {next.min} min
-          </span>
-        </p>
-      </div>
-      <span className="text-[20px] text-cyan-deep">→</span>
-    </Link>
-  );
-}
+/* The WhatsNext component was replaced by TodayCard — Day N of 90 is
+ * now the primary anchor on Home, since the 90-Day Challenge is the
+ * spine of how the app is used. */

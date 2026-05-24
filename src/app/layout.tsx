@@ -60,6 +60,10 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
+import { SacredWorkProvider } from "@/components/app/SacredWork";
+import { AccessibilityProvider } from "@/components/app/AccessibilityProvider";
+import CelebrationProvider from "@/components/celebrate/CelebrationProvider";
+
 export default function RootLayout({
   children,
 }: {
@@ -68,7 +72,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${garamond.variable} ${raleway.variable}`}>
       <body className="min-h-screen bg-white font-sans text-navy antialiased">
-        {children}
+        <AccessibilityProvider>
+          <SacredWorkProvider>
+            <CelebrationProvider>{children}</CelebrationProvider>
+          </SacredWorkProvider>
+        </AccessibilityProvider>
         <Analytics />
       </body>
     </html>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { QUOTES, type Quote, type QuoteSection } from "@/lib/quotes";
+import FavoriteButton from "./FavoriteButton";
 
 const SECTIONS: { id: QuoteSection | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -13,9 +14,15 @@ const SECTIONS: { id: QuoteSection | "all"; label: string }[] = [
 
 export default function QuoteBrowser({
   initial = QUOTES,
+  initialFavoriteIds = [],
 }: {
   initial?: Quote[];
+  initialFavoriteIds?: string[];
 }) {
+  const favoriteSet = useMemo(
+    () => new Set(initialFavoriteIds),
+    [initialFavoriteIds],
+  );
   const [q, setQ] = useState("");
   const [section, setSection] = useState<QuoteSection | "all">("all");
 
@@ -74,9 +81,15 @@ export default function QuoteBrowser({
               {quote.body}
               <span className="text-gold">&rdquo;</span>
             </p>
-            <p className="mt-2 font-sans text-[10px] uppercase tracking-[0.22em] text-navy/45">
-              — BJF · {sectionLabel(quote.section)}
-            </p>
+            <div className="mt-2 flex items-baseline justify-between gap-3">
+              <p className="font-sans text-[10px] uppercase tracking-[0.22em] text-navy/45">
+                — BJF · {sectionLabel(quote.section)}
+              </p>
+              <FavoriteButton
+                quoteId={quote.id}
+                initialSaved={favoriteSet.has(quote.id)}
+              />
+            </div>
           </li>
         ))}
       </ul>

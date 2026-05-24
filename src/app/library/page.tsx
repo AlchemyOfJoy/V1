@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { todayDrop } from "@/lib/daily-drop";
+import { getCurrentUser } from "@/lib/auth";
+import { query } from "@/lib/db";
 import CoachCard from "@/components/app/CoachCard";
 import QuoteBrowser from "@/components/library/QuoteBrowser";
 import { Tridot } from "@/components/app/Wave";
@@ -26,7 +28,15 @@ const MOODS = [
 ];
 
 export default async function LibraryPage() {
+  const user = await getCurrentUser();
   const drop = await todayDrop();
+  const favoriteRows = user
+    ? await query<{ quote_id: string }>(
+        `SELECT quote_id FROM quote_favorites WHERE user_id = $1`,
+        [user.id],
+      )
+    : [];
+  const favoriteIds = favoriteRows.map((r) => r.quote_id);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-5 pb-12 pt-6 sm:pt-10">
@@ -38,6 +48,24 @@ export default async function LibraryPage() {
           Brent&apos;s <em className="text-cyan-deep">words</em>
         </h1>
       </header>
+
+      {/* Courses entry */}
+      <Link
+        href="/courses"
+        className="group flex items-center justify-between gap-4 rounded-2xl border border-cyan-deep/25 bg-gradient-to-br from-mist to-white px-5 py-4 transition hover:border-cyan-deep/60"
+      >
+        <div>
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-deep">
+            Deep dives
+          </p>
+          <p className="mt-1 font-serif text-[18px] font-medium text-navy">
+            Structured courses
+          </p>
+        </div>
+        <span aria-hidden className="text-[20px] text-cyan-deep transition group-hover:translate-x-1">
+          →
+        </span>
+      </Link>
 
       {/* Hero: today's drop, big */}
       <CoachCard
@@ -78,7 +106,7 @@ export default async function LibraryPage() {
           Search any word. Filter by ITT pillar.
         </p>
         <div className="mt-5">
-          <QuoteBrowser />
+          <QuoteBrowser initialFavoriteIds={favoriteIds} />
         </div>
       </section>
     </div>

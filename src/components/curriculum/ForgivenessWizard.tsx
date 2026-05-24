@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SacredPage } from "@/components/app/SacredWork";
 import { useRouter } from "next/navigation";
 import { btnPrimary } from "@/lib/ui";
 import { formatSavedAt } from "./useWorksheetSave";
@@ -152,6 +153,7 @@ export default function ForgivenessWizard({
 
   return (
     <section className="space-y-8">
+      <SacredPage />
       <div className="space-y-3 rounded-2xl border border-navy/10 bg-mist p-5">
         <label
           htmlFor="subject-rename"

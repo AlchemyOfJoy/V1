@@ -53,22 +53,35 @@ export async function POST(req: NextRequest) {
 
   try {
     const item = await addJoyItem(user.id, content, pillar, sub);
-    // Awards — milestone badges, best-effort.
+    // Awards — milestone badges, best-effort. Returns the milestone so
+    // the client can fire a celebration if one was crossed.
+    let milestone: { count: number; label: string } | null = null;
     try {
       const rows = await query<{ c: string }>(
         `SELECT COUNT(*)::text AS c FROM list_of_joy_items WHERE user_id = $1`,
         [user.id],
       );
       const count = Number(rows[0]?.c ?? 0);
-      if (count === 1) await awardBadge(user.id, "first_joy");
-      else if (count === 10) await awardBadge(user.id, "joy_10");
-      else if (count === 25) await awardBadge(user.id, "joy_25");
-      else if (count === 100) await awardBadge(user.id, "joy_100");
-      else if (count === 500) await awardBadge(user.id, "joy_500");
+      if (count === 1) {
+        await awardBadge(user.id, "first_joy");
+        milestone = { count, label: "First Joy" };
+      } else if (count === 10) {
+        await awardBadge(user.id, "joy_10");
+        milestone = { count, label: "Ten Joys" };
+      } else if (count === 25) {
+        await awardBadge(user.id, "joy_25");
+        milestone = { count, label: "Twenty-five Joys" };
+      } else if (count === 100) {
+        await awardBadge(user.id, "joy_100");
+        milestone = { count, label: "One hundred." };
+      } else if (count === 500) {
+        await awardBadge(user.id, "joy_500");
+        milestone = { count, label: "Five hundred." };
+      }
     } catch {
       // ignore — badges are decorative
     }
-    return NextResponse.json({ item });
+    return NextResponse.json({ item, milestone });
   } catch (err) {
     console.error("[list-of-joy] add failed:", err);
     return NextResponse.json(

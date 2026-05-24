@@ -31,6 +31,8 @@ export default function ChallengeCalendar({
                 const s = states[d];
                 const isToday = d === currentDay;
                 const isFuture = d > currentDay;
+                const isMilestone =
+                  d === 1 || d === 30 || d === 60 || d === 90;
                 const completion =
                   s && s.checked
                     ? s.amDone && s.pmDone
@@ -58,16 +60,28 @@ export default function ChallengeCalendar({
                   <Link
                     key={d}
                     href={`/curriculum/90-day-challenge/day/${d}`}
-                    className={`${base} ${cls} hover:brightness-95`}
+                    className={`${base} ${cls} relative hover:brightness-95 ${
+                      isMilestone ? "ring-2 ring-[#C89A3F] ring-offset-1 ring-offset-white" : ""
+                    }`}
                     title={
-                      isToday
-                        ? `Day ${d} · Today`
-                        : isFuture
-                          ? `Day ${d} · Upcoming`
-                          : `Day ${d}`
+                      isMilestone
+                        ? `Day ${d} · Milestone`
+                        : isToday
+                          ? `Day ${d} · Today`
+                          : isFuture
+                            ? `Day ${d} · Upcoming`
+                            : `Day ${d}`
                     }
                   >
                     {d}
+                    {isMilestone && (
+                      <span
+                        aria-hidden
+                        className="absolute -right-1 -top-1 text-[10px] text-[#C89A3F]"
+                      >
+                        ✦
+                      </span>
+                    )}
                   </Link>
                 );
               })}

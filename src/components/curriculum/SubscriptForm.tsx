@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { btnPrimary } from "@/lib/ui";
 import type { SubscriptData } from "@/lib/curriculum";
 import { useWorksheetSave, formatSavedAt } from "./useWorksheetSave";
+import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
 
 const STEPS = [
   { title: "Anchor your Joy Spark", id: "anchor" },
@@ -29,6 +30,7 @@ export default function SubscriptForm({
   continueHref: string;
 }) {
   const router = useRouter();
+  const { celebrate } = useCelebrate();
   const [step, setStep] = useState(0);
 
   const [emotionAnchor, setEmotionAnchor] = useState(
@@ -104,7 +106,15 @@ export default function SubscriptForm({
     } catch {
       // Worksheet response is the source of truth; the versioned row is bonus.
     }
-    router.push(continueHref);
+    // Major celebration — the JOS install moment (§17.3).
+    celebrate({
+      size: "major",
+      eyebrow: "JOS® install",
+      primary: "You just built your operating system.",
+      secondary: "From here on out, we run it.",
+    });
+    // Route after the celebration auto-dismisses (user can also tap through).
+    setTimeout(() => router.push(continueHref), 4000);
   }
 
   const inputClass =

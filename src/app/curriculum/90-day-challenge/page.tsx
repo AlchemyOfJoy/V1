@@ -11,6 +11,7 @@ import {
 import StartChallenge from "@/components/curriculum/challenge/StartChallenge";
 import ChallengeCalendar from "@/components/curriculum/challenge/ChallengeCalendar";
 import { btnPrimary } from "@/lib/ui";
+import { getDayTask } from "@/lib/challenge-days";
 
 export const metadata: Metadata = {
   title: "90-Day Challenge",
@@ -119,48 +120,60 @@ export default async function ChallengePage() {
           </p>
         </header>
 
-        <section className="space-y-4 rounded-3xl border border-navy/10 bg-mist p-6 sm:p-8">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="font-serif text-[22px] font-medium text-navy">
-              This week — {week.title}
-            </h2>
-            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-deep">
-              Week {week.week} of 13
+        {/* TODAY — the prescribed daily task */}
+        {(() => {
+          const task = getDayTask(status.current_day);
+          if (!task) return null;
+          return (
+            <section
+              className={`space-y-4 rounded-3xl border p-6 sm:p-8 ${
+                task.isMilestone
+                  ? "border-[#C89A3F]/40 bg-gradient-to-br from-[#FAF6EC] via-white to-[#FAF6EC]"
+                  : "border-cyan-deep/30 bg-gradient-to-br from-mist to-white"
+              }`}
+            >
+              <p
+                className={`font-sans text-[10px] font-semibold uppercase tracking-[0.24em] ${
+                  task.isMilestone ? "text-[#8a6d00]" : "text-cyan-deep"
+                }`}
+              >
+                Today · Day {status.current_day}
+                {task.isMilestone ? " · milestone" : ""}
+              </p>
+              <h2 className="font-serif text-[26px] font-medium leading-tight text-navy sm:text-[30px]">
+                {task.title}
+              </h2>
+              <p className="font-serif text-[17px] italic leading-relaxed text-navy/70">
+                {task.description}
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link href={task.primaryHref} className={btnPrimary}>
+                  {task.primaryLabel} →
+                </Link>
+                <Link
+                  href={`/curriculum/90-day-challenge/day/${status.current_day}`}
+                  className="font-sans text-[13px] font-semibold text-navy/55 hover:text-cyan-deep"
+                >
+                  {completedToday ? "Review check-in" : "Mark complete →"}
+                </Link>
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* This week's theme — secondary context */}
+        <section className="rounded-2xl border border-navy/10 bg-white p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-deep">
+              Week {week.week} of 13 · {week.title}
+            </p>
+            <span className="font-sans text-[10px] uppercase tracking-[0.16em] text-navy/45">
+              The theme
             </span>
           </div>
-          <p className="font-sans text-[15px] font-light leading-[1.75] text-navy/80">
-            <span className="font-semibold text-navy">Focus.</span> {week.focus}
+          <p className="mt-2 font-serif text-[16px] italic leading-relaxed text-navy/75">
+            {week.focus}
           </p>
-          <p className="font-sans text-[15px] font-light leading-[1.75] text-navy/80">
-            <span className="font-semibold text-navy">Action.</span>{" "}
-            {week.action}
-          </p>
-          {week.link && (
-            <Link
-              href={week.link}
-              className="inline-block font-sans text-[13px] font-semibold text-cyan-deep hover:underline"
-            >
-              Open the work →
-            </Link>
-          )}
-        </section>
-
-        <section className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/55">
-              Today
-            </p>
-            <p className="mt-1 font-serif text-[22px] font-medium text-navy">
-              Day {status.current_day} ·{" "}
-              {completedToday ? "complete" : "open"}
-            </p>
-          </div>
-          <Link
-            href={`/curriculum/90-day-challenge/day/${status.current_day}`}
-            className={btnPrimary}
-          >
-            {completedToday ? "Review today" : "Check in →"}
-          </Link>
         </section>
 
         <section className="space-y-4">
