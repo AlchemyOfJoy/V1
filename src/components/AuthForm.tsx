@@ -40,9 +40,9 @@ export default function AuthForm({
         return;
       }
       track(isSignup ? "sign_up" : "login", { method: "email" });
-      // Curriculum is the post-auth home — onboarding redirects new users
-      // there automatically; returning users land on the dashboard.
-      router.push("/curriculum");
+      // /home is the post-auth landing — the daily anchor (Joy Drop,
+      // SubScript, "what's next", List of Joy, Joy Pulse, ITT loop).
+      router.push("/home");
       router.refresh();
     } catch {
       setError("Something didn't work — check your connection and try again?");

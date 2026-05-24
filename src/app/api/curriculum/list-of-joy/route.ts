@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { addJoyItem, listJoyItems } from "@/lib/list-of-joy";
+import { awardBadge } from "@/lib/badges";
 import { PILLAR_KEYS } from "@/lib/curriculum";
+import { query } from "@/lib/db";
 
 const PILLAR_IDS = new Set([
   "love",
@@ -51,6 +53,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const item = await addJoyItem(user.id, content, pillar, sub);
+    // Awards — milestone badges, best-effort.
+    try {
+      const rows = await query<{ c: string }>(
+        `SELECT COUNT(*)::text AS c FROM list_of_joy_items WHERE user_id = $1`,
+        [user.id],
+      );
+      const count = Number(rows[0]?.c ?? 0);
+      if (count === 1) await awardBadge(user.id, "first_joy");
+      else if (count === 10) await awardBadge(user.id, "joy_10");
+      else if (count === 25) await awardBadge(user.id, "joy_25");
+      else if (count === 100) await awardBadge(user.id, "joy_100");
+      else if (count === 500) await awardBadge(user.id, "joy_500");
+    } catch {
+      // ignore — badges are decorative
+    }
     return NextResponse.json({ item });
   } catch (err) {
     console.error("[list-of-joy] add failed:", err);

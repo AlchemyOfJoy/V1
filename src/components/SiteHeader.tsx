@@ -15,7 +15,7 @@ export default async function SiteHeader({ user }: { user: PublicUser | null }) 
     <header className="sticky top-0 z-50 border-b border-navy/10 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link
-          href={user ? "/curriculum" : "/"}
+          href={user ? "/home" : "/"}
           className="flex items-center gap-2.5 text-navy sm:gap-3"
         >
           {/* Compact monogram on mobile, full wordmark on larger screens */}

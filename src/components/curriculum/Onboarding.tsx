@@ -111,7 +111,7 @@ export default function Onboarding() {
       // Onboarding completion is best-effort; layout will keep redirecting
       // here if it didn't take, but the user can always click Continue again.
     }
-    router.push("/curriculum");
+    router.push("/home");
     router.refresh();
   }
 
@@ -158,7 +158,7 @@ export default function Onboarding() {
                 } catch {
                   // best-effort — layout will keep nudging if it failed
                 }
-                router.push("/curriculum");
+                router.push("/home");
                 router.refresh();
               }}
               className="ml-auto font-sans text-[12px] text-navy/45 transition-colors duration-150 hover:text-navy/70"

@@ -8,6 +8,8 @@ import {
   updateForgivenessSubject,
   type ForgivenessField,
 } from "@/lib/forgiveness";
+import { awardBadge } from "@/lib/badges";
+import { query } from "@/lib/db";
 
 export async function GET(
   _req: NextRequest,
@@ -62,6 +64,18 @@ export async function PATCH(
 
     if (body.complete === true) {
       const done = await completeForgivenessSubject(user.id, id);
+      try {
+        const rows = await query<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM forgiveness_subjects
+            WHERE user_id = $1 AND completed_at IS NOT NULL`,
+          [user.id],
+        );
+        const count = Number(rows[0]?.c ?? 0);
+        if (count === 1) await awardBadge(user.id, "forgiveness_first");
+        else if (count === 5) await awardBadge(user.id, "forgiveness_5");
+      } catch {
+        // best-effort
+      }
       return NextResponse.json({ subject: done ?? subject });
     }
     return NextResponse.json({ subject });
