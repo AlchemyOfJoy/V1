@@ -6,6 +6,14 @@ import {
   saveWorksheetResponse,
 } from "@/lib/worksheets";
 import { WORKSHEET_IDS } from "@/lib/curriculum";
+import { awardBadge } from "@/lib/badges";
+
+const WORKSHEET_BADGE: Record<string, string> = {
+  [WORKSHEET_IDS.coreNarrative]: "core_narrative_first",
+  [WORKSHEET_IDS.selfEulogy]: "self_eulogy_written",
+  [WORKSHEET_IDS.priorityPillars]: "pillars_first_snap",
+  [WORKSHEET_IDS.subscript]: "subscript_v1",
+};
 
 const ALLOWED = new Set<string>(Object.values(WORKSHEET_IDS));
 
@@ -52,6 +60,14 @@ export async function POST(
     );
     if (body.complete === true) {
       await markWorksheetComplete(user.id, id);
+      const badgeId = WORKSHEET_BADGE[id];
+      if (badgeId) {
+        try {
+          await awardBadge(user.id, badgeId);
+        } catch {
+          // best-effort
+        }
+      }
     }
     return NextResponse.json({ ok: true, savedAt: new Date().toISOString() });
   } catch (err) {

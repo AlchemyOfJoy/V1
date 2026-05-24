@@ -142,6 +142,93 @@ const SCHEMA = [
      mood_rating INT,
      UNIQUE (user_id, day_number)
    )`,
+  // --- Coach / AI companion ---
+  `CREATE TABLE IF NOT EXISTS chat_conversations (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     title TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     last_message_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_conversations_user
+     ON chat_conversations(user_id, last_message_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS chat_messages (
+     id BIGSERIAL PRIMARY KEY,
+     conversation_id TEXT NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+     role TEXT NOT NULL,
+     content TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_messages_conv
+     ON chat_messages(conversation_id, id)`,
+  `CREATE TABLE IF NOT EXISTS coach_content (
+     id TEXT PRIMARY KEY,
+     kind TEXT NOT NULL,
+     title TEXT NOT NULL,
+     body TEXT NOT NULL,
+     source TEXT,
+     tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+     is_active BOOLEAN NOT NULL DEFAULT true,
+     sort_order INT NOT NULL DEFAULT 100,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_coach_content_kind
+     ON coach_content(kind, is_active, sort_order)`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false`,
+  // --- ITT Framework additions (v7 spec) ---
+  `CREATE TABLE IF NOT EXISTS joy_pulse (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     score INT NOT NULL,
+     note TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_joy_pulse_user
+     ON joy_pulse(user_id, created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS itt_loops (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     for_date DATE NOT NULL,
+     intention TEXT,
+     thought TEXT,
+     action TEXT,
+     action_status TEXT,
+     evening_notes TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     UNIQUE (user_id, for_date)
+   )`,
+  `CREATE TABLE IF NOT EXISTS badges_earned (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     badge_id TEXT NOT NULL,
+     pillar TEXT NOT NULL,
+     context TEXT,
+     earned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     UNIQUE (user_id, badge_id)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_badges_user
+     ON badges_earned(user_id, earned_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS letters_to_self (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     body TEXT NOT NULL,
+     send_at TIMESTAMPTZ NOT NULL,
+     sent_at TIMESTAMPTZ,
+     opened_at TIMESTAMPTZ,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_letters_user
+     ON letters_to_self(user_id, send_at)`,
+  `CREATE TABLE IF NOT EXISTS journey_progress (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     section_id TEXT NOT NULL,
+     status TEXT NOT NULL,
+     completed_at TIMESTAMPTZ,
+     UNIQUE (user_id, section_id)
+   )`,
   // Additive column migrations — safe and idempotent
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_started_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_completed_at TIMESTAMPTZ`,

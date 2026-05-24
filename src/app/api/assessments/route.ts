@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { query } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { QUESTIONS } from "@/lib/questions";
+import { awardBadge } from "@/lib/badges";
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -52,6 +53,21 @@ export async function POST(req: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [id, user.id, score, JSON.stringify(answers), note || null, context],
     );
+    try {
+      const rows = await query<{ c: string; max_score: number | null }>(
+        `SELECT COUNT(*)::text AS c, MAX(score) FILTER (WHERE id <> $2) AS max_score
+           FROM assessments WHERE user_id = $1`,
+        [user.id, id],
+      );
+      const count = Number(rows[0]?.c ?? 0);
+      if (count === 1) await awardBadge(user.id, "jq_baseline");
+      const prevMax = rows[0]?.max_score;
+      if (prevMax !== null && prevMax !== undefined && score > prevMax) {
+        await awardBadge(user.id, "jq_rise");
+      }
+    } catch {
+      // best-effort
+    }
     return NextResponse.json({ id, score });
   } catch (err) {
     console.error("[assessments] save failed:", err);
