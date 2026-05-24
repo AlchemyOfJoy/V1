@@ -11,6 +11,7 @@ import CoachCard from "@/components/app/CoachCard";
 import JoyPulseControl from "@/components/home/JoyPulseControl";
 import IttLoopControl from "@/components/home/IttLoopControl";
 import PrimaryAction from "@/components/home/PrimaryAction";
+import QuickStartChips from "@/components/home/QuickStartChips";
 import { Tridot } from "@/components/app/Wave";
 import FavoriteButton from "@/components/library/FavoriteButton";
 
@@ -100,6 +101,9 @@ export default async function HomePage() {
 
       {/* THE SINGLE PRIMARY ACTION */}
       <PrimaryAction hasSubscript={hasSubscript} isMorning={isMorning} />
+
+      {/* Quick-start chips — three time-boxed entry points */}
+      <QuickStartChips />
 
       {/* WHAT'S NEXT (compact pill) */}
       <WhatsNext />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
 
 const inputClass =
   "w-full rounded-xl border border-navy/15 bg-white px-4 py-2.5 font-sans text-[14px] text-navy outline-none transition placeholder:text-navy/35 focus:border-cyan-deep focus:ring-2 focus:ring-cyan-deep/25";
@@ -22,6 +23,7 @@ export default function IttLoopControl({
   initial: Loop | null;
 }) {
   const router = useRouter();
+  const { celebrate } = useCelebrate();
   const [intention, setIntention] = useState(initial?.intention ?? "");
   const [thought, setThought] = useState(initial?.thought ?? "");
   const [action, setAction] = useState(initial?.action ?? "");
@@ -84,6 +86,16 @@ export default function IttLoopControl({
       });
       if (!res.ok) throw new Error();
       setSavedMsg("Closed the loop ✦");
+      // Micro-celebration — daily small win
+      celebrate({
+        size: "micro",
+        primary:
+          status === "yes"
+            ? "Loop closed. The day landed."
+            : status === "partial"
+              ? "Progress counts. Tomorrow."
+              : "Noted. The work continues.",
+      });
       router.refresh();
     } catch {
       setSavedMsg("Couldn't save — try again?");

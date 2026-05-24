@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
 
 export default function JoyPulseControl({
   initialScore,
@@ -11,6 +12,8 @@ export default function JoyPulseControl({
   const [score, setScore] = useState<number | null>(initialScore);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
+  const { celebrate } = useCelebrate();
+  const wasUnlogged = initialScore === null;
 
   async function set(value: number) {
     setScore(value);
@@ -21,6 +24,13 @@ export default function JoyPulseControl({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ score: value }),
       });
+      // First-of-the-day pulse fires a micro celebration
+      if (wasUnlogged) {
+        celebrate({
+          size: "micro",
+          primary: "Pulse logged. We&apos;ll ask again tomorrow.",
+        });
+      }
       router.refresh();
     } catch {
       // best effort
