@@ -7,6 +7,7 @@ import {
   setSessionCookie,
 } from "@/lib/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { startChallenge } from "@/lib/challenge";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -54,6 +55,10 @@ export async function POST(req: NextRequest) {
       name: name || null,
       passwordHash: hashPassword(password),
     });
+    // Auto-start the 90-Day Challenge so the user is on Day 1 from the
+    // very first sign-in. Onboarding completes it as well; this is the
+    // safety net for users who skip the tutorial.
+    await startChallenge(user.id);
     const token = await createSessionToken(user.id);
     await setSessionCookie(token);
 

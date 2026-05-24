@@ -485,21 +485,26 @@ function Reveal({ onFinish }: { onFinish: () => void }) {
         <p aria-hidden className="text-[40px] leading-none text-[#C89A3F]">
           ✦
         </p>
-        <h2 className="mt-5 font-serif text-[28px] font-medium leading-tight text-[#2A2724]">
+        <p className="mt-5 font-sans text-[11px] font-semibold uppercase tracking-[0.26em] text-[#C89A3F]">
+          Day 1 of 90 begins
+        </p>
+        <h2 className="mt-3 font-serif text-[28px] font-medium leading-tight text-[#2A2724]">
           You&apos;ve already done four things for yourself in less than
           five minutes.
         </h2>
         <p className="mt-4 font-serif text-[18px] italic text-[#2A2724]/65">
-          This is what the rest of it feels like.
+          What you&apos;re about to walk is a 90-day arc. Day by day,
+          week by week. By the end you&apos;ll have laid the foundation
+          for the rest of it.
         </p>
         <p className="mt-2 font-sans text-[13px] uppercase tracking-[0.22em] text-[#C89A3F]">
-          See you tomorrow.
+          Today&apos;s task: take your baseline JQ.
         </p>
         <button
           onClick={() => onFinish()}
           className="mt-10 rounded-full bg-[#C89A3F] px-8 py-3 font-sans text-[14px] font-semibold text-white hover:bg-[#A87F2F]"
         >
-          Open my Home
+          Begin Day 1 →
         </button>
       </div>
     </div>

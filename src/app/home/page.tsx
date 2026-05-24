@@ -12,8 +12,10 @@ import JoyPulseControl from "@/components/home/JoyPulseControl";
 import IttLoopControl from "@/components/home/IttLoopControl";
 import PrimaryAction from "@/components/home/PrimaryAction";
 import QuickStartChips from "@/components/home/QuickStartChips";
+import TodayCard from "@/components/home/TodayCard";
 import { Tridot } from "@/components/app/Wave";
 import FavoriteButton from "@/components/library/FavoriteButton";
+import { getCheckin } from "@/lib/challenge";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -54,6 +56,8 @@ export default async function HomePage() {
   const hasSubscript = activeSub.length > 0;
   const hour = new Date().getHours();
   const isMorning = hour < 16;
+  const todayCheckin = dayNumber !== null ? await getCheckin(user.id, dayNumber) : null;
+  const todayLogged = todayCheckin !== null;
 
   // Deterministic 3-from-list pick
   const threeFromList = (() => {
@@ -99,14 +103,20 @@ export default async function HomePage() {
 
       <Tridot />
 
-      {/* THE SINGLE PRIMARY ACTION */}
+      {/* THE PRIMARY ANCHOR — today's task on the 90-Day arc */}
+      {dayNumber !== null && (
+        <TodayCard
+          currentDay={dayNumber}
+          totalCheckins={challenge.total_checkins}
+          todayLogged={todayLogged}
+        />
+      )}
+
+      {/* SubScript daily ritual reminder */}
       <PrimaryAction hasSubscript={hasSubscript} isMorning={isMorning} />
 
-      {/* Quick-start chips — three time-boxed entry points */}
+      {/* Quick-start chips — three time-boxed entry points for in-the-moment */}
       <QuickStartChips />
-
-      {/* WHAT'S NEXT (compact pill) */}
-      <WhatsNext />
 
       {/* Joy Pulse — quiet, no header explainer */}
       <section className="rounded-3xl border border-navy/10 bg-white p-5">
@@ -188,66 +198,6 @@ function ThreeJoys({ items }: { items: { id: string; content: string }[] }) {
   );
 }
 
-async function WhatsNext() {
-  const user = (await getCurrentUser())!;
-  const completed = await query<{ worksheet_id: string }>(
-    `SELECT worksheet_id FROM worksheet_responses
-       WHERE user_id = $1 AND completed_at IS NOT NULL`,
-    [user.id],
-  );
-  const done = new Set(completed.map((r) => r.worksheet_id));
-  const path = [
-    {
-      id: "02_core_narrative",
-      title: "Core Narrative",
-      href: "/curriculum/module/02-joyful-operating-system/core-narrative",
-      min: 45,
-    },
-    {
-      id: "02_self_eulogy",
-      title: "Self-Eulogy",
-      href: "/curriculum/module/02-joyful-operating-system/self-eulogy",
-      min: 60,
-    },
-    {
-      id: "02_list_of_joy",
-      title: "List of Joy",
-      href: "/curriculum/module/02-joyful-operating-system/list-of-joy",
-      min: 20,
-    },
-    {
-      id: "02_priority_pillars",
-      title: "Priority Pillars",
-      href: "/curriculum/module/02-joyful-operating-system/priority-pillars",
-      min: 15,
-    },
-    {
-      id: "02_subscript",
-      title: "SubScript",
-      href: "/curriculum/module/02-joyful-operating-system/subscript",
-      min: 30,
-    },
-  ];
-  const next = path.find((p) => !done.has(p.id));
-  if (!next) return null;
-
-  return (
-    <Link
-      href={next.href}
-      className="flex items-center justify-between gap-4 rounded-2xl bg-mist px-5 py-3.5 transition hover:bg-mist/70"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-navy/45">
-          Next on the journey
-        </p>
-        <p className="mt-0.5 truncate font-serif text-[17px] font-medium text-navy">
-          {next.title}
-          <span className="ml-2 font-sans text-[12px] font-light text-navy/45">
-            {next.min} min
-          </span>
-        </p>
-      </div>
-      <span className="text-[20px] text-cyan-deep">→</span>
-    </Link>
-  );
-}
+/* The WhatsNext component was replaced by TodayCard — Day N of 90 is
+ * now the primary anchor on Home, since the 90-Day Challenge is the
+ * spine of how the app is used. */

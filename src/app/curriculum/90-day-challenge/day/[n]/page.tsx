@@ -8,6 +8,8 @@ import {
   TOTAL_DAYS,
   weekForDay,
 } from "@/lib/challenge";
+import { getDayTask } from "@/lib/challenge-days";
+import { btnPrimary } from "@/lib/ui";
 import DayCheckin from "@/components/curriculum/challenge/DayCheckin";
 
 export const metadata: Metadata = {
@@ -63,14 +65,49 @@ export default async function DayPage({
           </h1>
         </header>
 
+        {/* Today's specific task (the new day-by-day spine) */}
+        {(() => {
+          const task = getDayTask(dayNum);
+          if (!task) return null;
+          return (
+            <section
+              className={`space-y-4 rounded-3xl border p-6 sm:p-7 ${
+                task.isMilestone
+                  ? "border-[#C89A3F]/40 bg-gradient-to-br from-[#FAF6EC] via-white to-[#FAF6EC]"
+                  : "border-cyan-deep/30 bg-gradient-to-br from-mist to-white"
+              }`}
+            >
+              <p
+                className={`font-sans text-[10px] font-semibold uppercase tracking-[0.24em] ${
+                  task.isMilestone ? "text-[#8a6d00]" : "text-cyan-deep"
+                }`}
+              >
+                Today&apos;s task{task.isMilestone ? " · milestone" : ""}
+              </p>
+              <h2 className="font-serif text-[26px] font-medium leading-tight text-navy">
+                {task.title}
+              </h2>
+              <p className="font-serif text-[17px] italic leading-relaxed text-navy/70">
+                {task.description}
+              </p>
+              {!isFuture && (
+                <Link href={task.primaryHref} className={btnPrimary}>
+                  {task.primaryLabel} →
+                </Link>
+              )}
+            </section>
+          );
+        })()}
+
+        {/* This week's theme — secondary */}
         <section className="space-y-3 rounded-3xl border border-navy/10 bg-mist p-6">
           <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-deep">
-            This week
+            This week — {week.title}
           </p>
-          <p className="font-serif text-[20px] font-medium text-navy">
+          <p className="font-serif text-[18px] italic text-navy/75">
             {week.focus}
           </p>
-          <p className="font-sans text-[14px] font-light leading-relaxed text-navy/70">
+          <p className="font-sans text-[13px] font-light leading-relaxed text-navy/65">
             {week.action}
           </p>
           {week.link && (
