@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCelebrate } from "@/components/celebrate/CelebrationProvider";
+import { queuedFetch } from "@/lib/offline-queue";
 
 export default function JoyPulseControl({
   initialScore,
@@ -19,16 +20,22 @@ export default function JoyPulseControl({
     setScore(value);
     setSaving(true);
     try {
-      await fetch("/api/joy-pulse", {
+      const res = await queuedFetch("/api/joy-pulse", {
         method: "POST",
+        kind: "joy-pulse",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ score: value }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (data?.queued) {
+        window.dispatchEvent(new Event("aoj:queued"));
+        return;
+      }
       // First-of-the-day pulse fires a micro celebration
       if (wasUnlogged) {
         celebrate({
           size: "micro",
-          primary: "Pulse logged. We&apos;ll ask again tomorrow.",
+          primary: "Pulse logged. We’ll ask again tomorrow.",
         });
       }
       router.refresh();
