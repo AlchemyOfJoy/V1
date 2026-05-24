@@ -35,6 +35,9 @@ export default function SiteHeader({ user }: { user: PublicUser | null }) {
               <Link href="/dashboard" className={`hidden sm:inline ${navLink}`}>
                 JQ History
               </Link>
+              <Link href="/account" className={`hidden sm:inline ${navLink}`}>
+                Account
+              </Link>
               <LogoutButton />
               <Link href="/assessment" className={btnPrimarySm}>
                 New check-in

@@ -147,21 +147,21 @@ export const SECONDARY_DESTS: SecondaryDest[] = [
     slug: "90-day-challenge",
     title: "90-Day Challenge",
     subtitle: "Day-by-day practice with weekly focus areas.",
-    status: "coming-soon",
+    status: "available",
   },
   {
     id: "journal",
     slug: "journal",
     title: "Journal",
     subtitle: "Every reflection, in one place.",
-    status: "coming-soon",
+    status: "available",
   },
   {
     id: "export",
     slug: "export",
     title: "Export",
-    subtitle: "Download your responses as a printable workbook PDF.",
-    status: "coming-soon",
+    subtitle: "Download your responses as a printable workbook.",
+    status: "available",
   },
 ];
 
