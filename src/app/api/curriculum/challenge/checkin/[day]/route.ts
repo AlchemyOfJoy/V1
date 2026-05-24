@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getCheckin, TOTAL_DAYS, upsertCheckin } from "@/lib/challenge";
+import {
+  getCheckin,
+  markChallengeCompleted,
+  TOTAL_DAYS,
+  upsertCheckin,
+} from "@/lib/challenge";
 
 function parseDay(s: string): number | null {
   const n = Number.parseInt(s, 10);
@@ -60,6 +65,10 @@ export async function POST(
 
   try {
     const checkin = await upsertCheckin(user.id, dayNum, patch);
+    // Cadence Directive §9 — Day 90 close triggers Practice Mode transition
+    if (dayNum === TOTAL_DAYS) {
+      await markChallengeCompleted(user.id);
+    }
     return NextResponse.json({ checkin });
   } catch (err) {
     console.error("[challenge] checkin failed:", err);

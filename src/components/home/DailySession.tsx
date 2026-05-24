@@ -70,11 +70,22 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
   switch (card.kind) {
     case "letter":
       return <LetterCard letterId={String(p.letterId ?? "")} />;
+    case "missed_days":
+      return (
+        <MissedDaysCard
+          currentDay={Number(p.currentDay ?? 1)}
+          gap={Number(p.gap ?? 0)}
+          skipTo={Number(p.skipTo ?? 1)}
+          onAdvance={advance}
+        />
+      );
     case "greeting":
       return (
         <GreetingCard
           firstName={String(p.firstName ?? "")}
           currentDay={(p.currentDay as number | null) ?? null}
+          mode={String(p.mode ?? "challenge") as "challenge" | "practice" | "free"}
+          isGraduated={Boolean(p.isGraduated)}
           drop={p.drop as { id: string; body: string; source?: string | null; saved: boolean }}
           onAdvance={advance}
         />
@@ -108,6 +119,30 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
           onSkip={advance}
         />
       );
+    case "rest_day":
+      return (
+        <RestDayCard
+          day={Number(p.day ?? 1)}
+          phase={(p.phase as string | null) ?? null}
+          onAdvance={advance}
+        />
+      );
+    case "practice_suggestion":
+      return (
+        <WhatsNextCard
+          eyebrow={String(p.eyebrow ?? "")}
+          title={String(p.title ?? "")}
+          subtitle={String(p.subtitle ?? "")}
+          href={String(p.href ?? "/toolkit")}
+          primaryLabel={String(p.primaryLabel ?? "Begin")}
+          estimatedMin={p.estimatedMin as number | undefined}
+          onSkip={advance}
+        />
+      );
+    case "free_invite":
+      return <FreeInviteCard onAdvance={advance} />;
+    case "graduation":
+      return <GraduationCard onAdvance={advance} />;
     case "joy_glimpse":
       return (
         <JoyGlimpseCard
@@ -116,7 +151,14 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
         />
       );
     case "close":
-      return <CloseCard isEvening={Boolean(p.isEvening)} />;
+      return (
+        <CloseCard
+          isEvening={Boolean(p.isEvening)}
+          mode={String(p.mode ?? "challenge") as "challenge" | "practice" | "free"}
+          currentDay={(p.currentDay as number | null) ?? null}
+          nextDay={(p.nextDay as number | null) ?? null}
+        />
+      );
   }
 }
 
@@ -149,24 +191,37 @@ function LetterCard({ letterId }: { letterId: string }) {
 function GreetingCard({
   firstName,
   currentDay,
+  mode,
+  isGraduated,
   drop,
   onAdvance,
 }: {
   firstName: string;
   currentDay: number | null;
+  mode: "challenge" | "practice" | "free";
+  isGraduated: boolean;
   drop: { id: string; body: string; source?: string | null; saved: boolean };
   onAdvance: () => void;
 }) {
   const hour = new Date().getHours();
   const greeting = hour < 5 ? "Late night," : hour < 12 ? "Good morning," : hour < 18 ? "Hello," : "Good evening,";
+  // Mode-aware day marker (Cadence Directive §3.1, §4.1)
+  let dayMarker: string | null = null;
+  if (mode === "challenge" && currentDay !== null && !isGraduated) {
+    dayMarker = `Day ${currentDay} of your Challenge`;
+  } else if (mode === "practice" || isGraduated) {
+    dayMarker = currentDay && currentDay > 90 ? `Day ${currentDay - 90} post-install` : "The practice";
+  } else if (mode === "free") {
+    dayMarker = "Exploring";
+  }
   return (
     <div className="flex flex-1 flex-col">
       <p className="font-serif text-[32px] font-medium leading-tight text-navy">
         {greeting} {firstName}.
       </p>
-      {currentDay !== null && (
+      {dayMarker && (
         <p className="mt-1 font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan-deep">
-          Day {currentDay} <span className="tabular-nums">·</span> of 90
+          {dayMarker}
         </p>
       )}
       <hr className="my-6 w-12 border-navy/15" />
@@ -557,25 +612,202 @@ function JoyGlimpseCard({
   );
 }
 
-function CloseCard({ isEvening }: { isEvening: boolean }) {
+function CloseCard({
+  isEvening,
+  mode,
+  currentDay,
+  nextDay,
+}: {
+  isEvening: boolean;
+  mode: "challenge" | "practice" | "free";
+  currentDay: number | null;
+  nextDay: number | null;
+}) {
+  const headline =
+    mode === "challenge" && currentDay !== null
+      ? `That's Day ${currentDay}.`
+      : "That's it.";
+  const subline =
+    mode === "challenge" && nextDay
+      ? `See you tomorrow for Day ${nextDay}.`
+      : isEvening
+        ? "Sleep well. Tomorrow’s already waiting."
+        : "Come back anytime you need a Reset Breath. ⚡";
   return (
     <div className="flex flex-1 flex-col">
       <p className="font-serif text-[36px] font-medium leading-tight text-navy">
-        That&apos;s it.
+        {headline}
       </p>
       <hr className="my-6 w-12 border-navy/15" />
       <p className="font-serif text-[18px] leading-relaxed text-navy/80">
         You did your {isEvening ? "evening" : "morning"} work.
       </p>
       <p className="mt-4 font-serif text-[16px] italic leading-relaxed text-navy/65">
-        {isEvening
-          ? "Sleep well. Tomorrow’s already waiting."
-          : "Come back anytime you need a Reset Breath. ⚡"}
+        {subline}
       </p>
       <div className="mt-auto pt-12">
         <p className="text-center font-sans text-[11px] uppercase tracking-[0.22em] text-navy/45">
           You can put it down now.
         </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- new cards from the Cadence Directive ---------------- */
+
+function MissedDaysCard({
+  currentDay,
+  gap,
+  skipTo,
+  onAdvance,
+}: {
+  currentDay: number;
+  gap: number;
+  skipTo: number;
+  onAdvance: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
+        Welcome back
+      </p>
+      <h1 className="mt-4 font-serif text-[32px] font-medium leading-tight text-navy">
+        {gap === 1
+          ? "You missed yesterday."
+          : `It’s been ${gap} days.`}
+      </h1>
+      <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-navy/70">
+        That&apos;s okay. The work is patient. Day {currentDay} is ready for
+        you whenever you are. No streak to recover. No clock running.
+      </p>
+      <div className="mt-auto pt-12 space-y-3">
+        <button
+          type="button"
+          onClick={onAdvance}
+          className={btnPrimary}
+        >
+          Pick up Day {currentDay} →
+        </button>
+        {skipTo > currentDay && (
+          <Link
+            href={`/curriculum/90-day-challenge/day/${skipTo}`}
+            className="block text-center font-sans text-[12px] font-semibold text-navy/55 hover:text-navy"
+          >
+            Skip to today’s Day {skipTo}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RestDayCard({
+  day,
+  phase,
+  onAdvance,
+}: {
+  day: number;
+  phase: string | null;
+  onAdvance: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
+        Day {day} {phase ? `· ${phase}` : ""}
+      </p>
+      <h1 className="mt-4 font-serif text-[32px] font-medium leading-tight text-navy">
+        Today is a rest day.
+      </h1>
+      <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-navy/70">
+        You did hard work. Today we let it integrate. The methodology works
+        because of the spacing, not despite it.
+      </p>
+      <ul className="mt-6 space-y-2 font-serif text-[16px] leading-relaxed text-navy/75">
+        <li>· Morning SubScript (5 min)</li>
+        <li>· Evening SubScript (5 min)</li>
+        <li>· One Joy Pulse logged</li>
+      </ul>
+      <p className="mt-6 font-serif text-[16px] italic text-navy/65">
+        Take a walk. Notice what&apos;s shifting.
+      </p>
+      <div className="mt-auto pt-12">
+        <button type="button" onClick={onAdvance} className={btnPrimary}>
+          Acknowledge →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FreeInviteCard({ onAdvance }: { onAdvance: () => void }) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
+        When you’re ready
+      </p>
+      <h1 className="mt-4 font-serif text-[28px] font-medium leading-tight text-navy">
+        Start the 90-Day Challenge.
+      </h1>
+      <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-navy/70">
+        The methodology was built to be run in 90 days. Each day is a
+        small piece of the install — about ten minutes.
+      </p>
+      <div className="mt-auto pt-12 space-y-3">
+        <form
+          action="/api/me/challenge-mode"
+          method="post"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await fetch("/api/me/challenge-mode", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mode: "challenge" }),
+            });
+            window.location.reload();
+          }}
+        >
+          <button type="submit" className={btnPrimary}>
+            Begin Day 1 →
+          </button>
+        </form>
+        <button
+          type="button"
+          onClick={onAdvance}
+          className="block w-full font-sans text-[12px] font-semibold text-navy/55 hover:text-navy"
+        >
+          Not yet — just looking around
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GraduationCard({ onAdvance }: { onAdvance: () => void }) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a6d00]">
+        Day 91 — and after
+      </p>
+      <h1 className="mt-4 font-serif text-[32px] font-medium leading-tight text-navy">
+        First day of the rest of your life running this.
+      </h1>
+      <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-navy/70">
+        You finished the Challenge. From here, you&apos;re in Practice
+        Mode — same daily rhythm, deeper agency. The app suggests; you
+        choose.
+      </p>
+      <div className="mt-auto pt-12 space-y-3">
+        <Link href="/me/wins" className={btnPrimary}>
+          See your wins →
+        </Link>
+        <button
+          type="button"
+          onClick={onAdvance}
+          className="block w-full font-sans text-[12px] font-semibold text-navy/55 hover:text-navy"
+        >
+          Continue
+        </button>
       </div>
     </div>
   );

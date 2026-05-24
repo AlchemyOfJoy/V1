@@ -27,6 +27,43 @@ export interface DayTask {
   isReflection?: boolean;
 }
 
+/**
+ * Phases of the 90-Day Challenge (Cadence Directive §2):
+ *   1. Foundation (Days 1-7)
+ *   2. JOS Install (Days 8-21)
+ *   3. Forgiveness (Days 22-42)
+ *   4. Take Bold Action (Days 43-63)
+ *   5. Full System Running (Days 64-90)
+ */
+export interface Phase {
+  number: 1 | 2 | 3 | 4 | 5;
+  title: string;
+  range: [number, number];
+}
+
+export const PHASES: Phase[] = [
+  { number: 1, title: "Foundation", range: [1, 7] },
+  { number: 2, title: "JOS Install", range: [8, 21] },
+  { number: 3, title: "Forgiveness", range: [22, 42] },
+  { number: 4, title: "Take Bold Action", range: [43, 63] },
+  { number: 5, title: "Full System Running", range: [64, 90] },
+];
+
+export function phaseForDay(day: number): Phase | null {
+  return PHASES.find((p) => day >= p.range[0] && day <= p.range[1]) ?? null;
+}
+
+/**
+ * Rest days are real in the methodology (Directive §3.4). On these
+ * days the prescribed work is daily rituals only — SubScript reads,
+ * Joy Pulse, ITT loop. No new Module work.
+ */
+export const REST_DAYS = new Set<number>([14, 35, 53]);
+
+export function isRestDay(day: number): boolean {
+  return REST_DAYS.has(day);
+}
+
 export const DAYS: DayTask[] = [
   // ───── WEEK 1: Foundation (1-7) ─────
   {

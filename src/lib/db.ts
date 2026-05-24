@@ -490,6 +490,9 @@ const SCHEMA = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_current_day INT`,
   `ALTER TABLE assessments ADD COLUMN IF NOT EXISTS context TEXT`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS tutorial_flags JSONB NOT NULL DEFAULT '{}'::jsonb`,
+  // Challenge Cadence Directive — three user states + completion-based day count
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_mode TEXT NOT NULL DEFAULT 'challenge'`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_completed_at TIMESTAMPTZ`,
   // --- Notifications: per-user channel prefs + idempotent delivery log ---
   `CREATE TABLE IF NOT EXISTS notification_preferences (
      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

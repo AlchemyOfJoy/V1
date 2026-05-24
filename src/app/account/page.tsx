@@ -8,17 +8,22 @@ import {
   ProfileForm,
 } from "@/components/account/AccountForms";
 import AccessibilityToggle from "@/components/account/AccessibilityToggle";
+import ModeSwitcher from "@/components/account/ModeSwitcher";
+import { getChallengeStatus } from "@/lib/challenge";
 
 export const metadata: Metadata = {
   title: "Account",
   robots: { index: false },
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const full = await getUserById(user.id);
   const hasPassword = !!full?.password_hash;
+  const challenge = await getChallengeStatus(user.id);
 
   return (
     <main className="px-6 py-12 sm:py-16">
@@ -44,6 +49,17 @@ export default async function AccountPage() {
             {hasPassword ? "Change password" : "Set a password"}
           </h2>
           <PasswordForm hasPassword={hasPassword} />
+        </section>
+
+        <section className="space-y-4 rounded-3xl border border-navy/10 bg-white p-6 sm:p-8">
+          <h2 className="font-serif text-[22px] font-medium text-navy">
+            Your path through the methodology
+          </h2>
+          <p className="font-sans text-[14px] font-light text-navy/65">
+            The Challenge IS the curriculum for the first 90 days. After
+            that, the practice continues — quieter, your call.
+          </p>
+          <ModeSwitcher initialMode={challenge.mode} />
         </section>
 
         <section className="space-y-3">
