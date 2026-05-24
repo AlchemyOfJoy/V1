@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/SiteHeader";
 import TabBar, { SideRail } from "./TabBar";
 import FloatingActions from "./FloatingActions";
+import StuckPrompt from "./StuckPrompt";
 
 /**
  * AppShell — wraps every signed-in app surface in:
@@ -32,6 +33,7 @@ export default async function AppShell({
       </div>
       <TabBar />
       <FloatingActions />
+      <StuckPrompt />
     </>
   );
 }

@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import ToolkitBrowser from "@/components/toolkit/ToolkitBrowser";
+import TeachingMoment from "@/components/app/TeachingMoment";
+import { getCurrentUser } from "@/lib/auth";
+import { getTutorialFlags } from "@/lib/tutorial-flags";
 
 export const metadata: Metadata = {
   title: "Tool Kit",
   robots: { index: false },
 };
 
-export default function ToolkitPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ToolkitPage() {
+  const user = (await getCurrentUser())!;
+  const flags = await getTutorialFlags(user.id);
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-5 pb-12 pt-6 sm:pt-10">
       <header>
@@ -17,6 +24,11 @@ export default function ToolkitPage() {
           Arrows in your <em className="text-cyan-deep">quiver</em>
         </h1>
       </header>
+      <TeachingMoment
+        flag="first_tool_tap"
+        copy="Tools live here. Use them any time."
+        alreadySeen={flags.first_tool_tap}
+      />
       <ToolkitBrowser />
     </div>
   );

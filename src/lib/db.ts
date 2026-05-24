@@ -489,6 +489,7 @@ const SCHEMA = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_started_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_current_day INT`,
   `ALTER TABLE assessments ADD COLUMN IF NOT EXISTS context TEXT`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS tutorial_flags JSONB NOT NULL DEFAULT '{}'::jsonb`,
 ];
 
 /** Create tables on first use — idempotent, runs once per process.
