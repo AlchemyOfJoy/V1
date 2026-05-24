@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { PublicUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin";
+import { query } from "@/lib/db";
 import { btnPrimarySm } from "@/lib/ui";
 import BrandLogo from "./BrandLogo";
 import Monogram from "./Monogram";
@@ -11,6 +12,18 @@ const navLink =
 
 export default async function SiteHeader({ user }: { user: PublicUser | null }) {
   const admin = user ? await isAdminUser(user) : false;
+  let isCoach = false;
+  if (user) {
+    try {
+      const rows = await query<{ role: string | null }>(
+        `SELECT role FROM users WHERE id = $1`,
+        [user.id],
+      );
+      isCoach = rows[0]?.role === "coach";
+    } catch {
+      // best effort
+    }
+  }
   return (
     <header className="sticky top-0 z-50 border-b border-navy/10 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -37,7 +50,7 @@ export default async function SiteHeader({ user }: { user: PublicUser | null }) 
                 href="/coach"
                 className="whitespace-nowrap font-sans text-[13px] font-semibold text-cyan-deep transition-colors duration-150 hover:text-navy"
               >
-                ✦ Companion
+                ✦ Your Coach
               </Link>
               {/* Logo goes to /curriculum when signed in; this links the JQ history view */}
               <Link href="/dashboard" className={`hidden sm:inline ${navLink}`}>
@@ -46,6 +59,14 @@ export default async function SiteHeader({ user }: { user: PublicUser | null }) 
               <Link href="/account" className={`hidden sm:inline ${navLink}`}>
                 Account
               </Link>
+              {(isCoach || admin) && (
+                <Link
+                  href="/coach-portal"
+                  className={`hidden sm:inline ${navLink}`}
+                >
+                  Coach Portal
+                </Link>
+              )}
               {admin && (
                 <Link
                   href="/admin/coach-content"

@@ -22,6 +22,24 @@ export default async function AdminLayout({
           >
             Content studio
           </Link>
+          <Link
+            href="/admin/coaches"
+            className="text-navy/70 hover:text-cyan-deep"
+          >
+            Coaches
+          </Link>
+          <Link
+            href="/admin/cert-applications"
+            className="text-navy/70 hover:text-cyan-deep"
+          >
+            Cert applications
+          </Link>
+          <Link
+            href="/admin/assignments"
+            className="text-navy/70 hover:text-cyan-deep"
+          >
+            Assignments
+          </Link>
         </div>
       </div>
       {children}

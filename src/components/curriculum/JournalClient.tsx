@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { btnPrimary } from "@/lib/ui";
+import ShareWithCoachButton from "@/components/sharing/ShareWithCoachButton";
 
 export interface JournalItem {
   id: string;
@@ -212,6 +213,12 @@ export default function JournalClient({
                 <p className="mt-2 whitespace-pre-wrap font-serif text-[16px] leading-[1.8] text-navy">
                   {e.body}
                 </p>
+                <div className="mt-3 flex justify-end">
+                  <ShareWithCoachButton
+                    resourceType="journal"
+                    resourceId={e.id}
+                  />
+                </div>
               </li>
             );
           })}
