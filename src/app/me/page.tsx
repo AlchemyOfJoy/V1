@@ -227,6 +227,7 @@ export default async function MePage() {
           { href: "/me/letters", label: "Letters", icon: "✉" },
           { href: "/me/my-joy", label: "My Joy Library", icon: "♥" },
           { href: "/3am", label: "For hard hours", icon: "☾" },
+          { href: "/me/notifications", label: "Notifications", icon: "◈" },
           { href: "/curriculum/journal", label: "Journal", icon: "❋" },
           { href: "/curriculum/export", label: "Export", icon: "↓" },
           { href: "/account", label: "Settings", icon: "○" },

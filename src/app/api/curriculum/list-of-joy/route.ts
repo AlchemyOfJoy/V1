@@ -4,6 +4,7 @@ import { addJoyItem, listJoyItems } from "@/lib/list-of-joy";
 import { awardBadge } from "@/lib/badges";
 import { PILLAR_KEYS } from "@/lib/curriculum";
 import { query } from "@/lib/db";
+import { dispatchEvent } from "@/lib/notifications/dispatch";
 
 const PILLAR_IDS = new Set([
   "love",
@@ -80,6 +81,14 @@ export async function POST(req: NextRequest) {
       }
     } catch {
       // ignore — badges are decorative
+    }
+    // Fire an event-driven notification on real milestones — silent if
+    // the user has none of push/email/SMS enabled, or the milestone
+    // kind is off.
+    if (milestone) {
+      dispatchEvent(user.id, "milestone", {
+        milestoneLabel: milestone.label,
+      }).catch((err) => console.error("[notifications/milestone]", err));
     }
     return NextResponse.json({ item, milestone });
   } catch (err) {

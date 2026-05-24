@@ -87,6 +87,13 @@ const HELP: Array<{ match: RegExp; entry: HelpEntry }> = [
       body: "Five short pieces of Brent's voice for the nights when sleep won't come. No CTAs. No streak nudges. Read, breathe, rest.",
     },
   },
+  {
+    match: /^\/me\/notifications/,
+    entry: {
+      title: "Quiet by design",
+      body: "Three channels — browser push, email, text. All off by default. Pick what you want, when you want it. Never guilt, never urgency.",
+    },
+  },
 ];
 
 function helpFor(pathname: string): HelpEntry {

@@ -490,6 +490,40 @@ const SCHEMA = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_current_day INT`,
   `ALTER TABLE assessments ADD COLUMN IF NOT EXISTS context TEXT`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS tutorial_flags JSONB NOT NULL DEFAULT '{}'::jsonb`,
+  // --- Notifications: per-user channel prefs + idempotent delivery log ---
+  `CREATE TABLE IF NOT EXISTS notification_preferences (
+     user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+     push_enabled BOOLEAN NOT NULL DEFAULT false,
+     push_subscription JSONB,
+     email_enabled BOOLEAN NOT NULL DEFAULT false,
+     email_address TEXT,
+     sms_enabled BOOLEAN NOT NULL DEFAULT false,
+     phone_e164 TEXT,
+     morning_time TEXT NOT NULL DEFAULT '07:00',
+     evening_time TEXT NOT NULL DEFAULT '21:30',
+     timezone TEXT NOT NULL DEFAULT 'America/Los_Angeles',
+     subscript_morning BOOLEAN NOT NULL DEFAULT true,
+     subscript_evening BOOLEAN NOT NULL DEFAULT true,
+     weekly_pillar BOOLEAN NOT NULL DEFAULT true,
+     letter_delivered BOOLEAN NOT NULL DEFAULT true,
+     gone_dark BOOLEAN NOT NULL DEFAULT true,
+     milestone BOOLEAN NOT NULL DEFAULT true,
+     unsubscribe_token TEXT NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex'),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE TABLE IF NOT EXISTS notification_deliveries (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     kind TEXT NOT NULL,
+     send_date DATE NOT NULL,
+     channel TEXT NOT NULL,
+     sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     status TEXT NOT NULL,
+     error TEXT,
+     UNIQUE (user_id, kind, send_date, channel)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_notif_deliveries_user
+     ON notification_deliveries(user_id, sent_at DESC)`,
 ];
 
 /** Create tables on first use — idempotent, runs once per process.
