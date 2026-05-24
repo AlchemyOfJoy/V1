@@ -80,6 +80,13 @@ const HELP: Array<{ match: RegExp; entry: HelpEntry }> = [
       body: "BrentBot is the AI coach trained on Brent's body of work. If you've been paired with a human coach, you'll see them here too. Conversations are private.",
     },
   },
+  {
+    match: /^\/3am/,
+    entry: {
+      title: "For hard hours",
+      body: "Five short pieces of Brent's voice for the nights when sleep won't come. No CTAs. No streak nudges. Read, breathe, rest.",
+    },
+  },
 ];
 
 function helpFor(pathname: string): HelpEntry {

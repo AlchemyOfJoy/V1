@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { Tridot } from "@/components/app/Wave";
 import LetterComposer from "@/components/letters/LetterComposer";
+import OpenLetterEffect from "@/components/letters/OpenLetterEffect";
+import TeachingMoment from "@/components/app/TeachingMoment";
+import { getTutorialFlags } from "@/lib/tutorial-flags";
 
 export const metadata: Metadata = {
   title: "Letters",
@@ -31,13 +35,16 @@ export default async function LettersPage() {
     [user.id],
   );
 
-  const letters = await query<Letter>(
-    `SELECT id::text AS id, body, send_at, sent_at, opened_at, created_at
-       FROM letters_to_self
-       WHERE user_id = $1
-       ORDER BY send_at DESC`,
-    [user.id],
-  );
+  const [letters, flags] = await Promise.all([
+    query<Letter>(
+      `SELECT id::text AS id, body, send_at, sent_at, opened_at, created_at
+         FROM letters_to_self
+         WHERE user_id = $1
+         ORDER BY send_at DESC`,
+      [user.id],
+    ),
+    getTutorialFlags(user.id),
+  ]);
 
   const arrived = letters.filter((l) => l.sent_at !== null);
   const pending = letters.filter((l) => l.sent_at === null);
@@ -60,6 +67,16 @@ export default async function LettersPage() {
         </h1>
       </header>
 
+      <Suspense fallback={null}>
+        <OpenLetterEffect />
+      </Suspense>
+
+      <TeachingMoment
+        flag="first_letter"
+        copy="You’ll send this to yourself, later."
+        alreadySeen={flags.first_letter}
+      />
+
       <LetterComposer />
 
       {arrived.length > 0 && (
@@ -73,7 +90,8 @@ export default async function LettersPage() {
               {arrived.map((l) => (
                 <li
                   key={l.id}
-                  className="rounded-3xl border border-cyan-deep/30 bg-[#FAF6EC] p-5"
+                  id={`letter-${l.id}`}
+                  className="rounded-3xl border border-cyan-deep/30 bg-[#FAF6EC] p-5 transition"
                 >
                   <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-deep">
                     Arrived{" "}

@@ -169,6 +169,7 @@ export default async function ShowMyWinsPage() {
           <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-deep">
             Priority Pillars · then & now
           </p>
+          <PillarRadar first={firstPillar} latest={latestPillar} />
           <div className="mt-4 grid grid-cols-2 gap-6">
             <div className="text-center">
               <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-navy/45">
@@ -314,6 +315,141 @@ export default async function ShowMyWinsPage() {
         — BJF
       </p>
     </main>
+  );
+}
+
+interface PillarRow {
+  love_self: number | null;
+  love_romantic: number | null;
+  faith_self: number | null;
+  faith_universe: number | null;
+  health_mind: number | null;
+  health_body: number | null;
+  family_blood: number | null;
+  family_chosen: number | null;
+  career_money: number | null;
+  career_giving_back: number | null;
+  community_personal: number | null;
+  community_professional: number | null;
+}
+
+const PILLAR_AXES: Array<{ key: keyof PillarRow; label: string }> = [
+  { key: "love_self", label: "Love · self" },
+  { key: "love_romantic", label: "Love · romantic" },
+  { key: "faith_self", label: "Faith · self" },
+  { key: "faith_universe", label: "Faith · universe" },
+  { key: "health_mind", label: "Health · mind" },
+  { key: "health_body", label: "Health · body" },
+  { key: "family_blood", label: "Family · blood" },
+  { key: "family_chosen", label: "Family · chosen" },
+  { key: "career_money", label: "Career · $" },
+  { key: "career_giving_back", label: "Career · give" },
+  { key: "community_personal", label: "Comm · personal" },
+  { key: "community_professional", label: "Comm · pro" },
+];
+
+/**
+ * Pillar drift radar (Build Directive §9.4) — overlaid radar charts
+ * showing baseline vs current Pillar snapshots. Twelve axes, scored
+ * 1–10. The Day-1 ring is dimmed; today's ring is solid cyan.
+ */
+function PillarRadar({
+  first,
+  latest,
+}: {
+  first: PillarRow | undefined;
+  latest: PillarRow | undefined;
+}) {
+  if (!first || !latest) return null;
+  const size = 280;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size / 2 - 30;
+
+  function pointsFor(row: PillarRow): string {
+    return PILLAR_AXES.map((axis, i) => {
+      const score = row[axis.key];
+      const v = typeof score === "number" ? score : 0;
+      const angle = (i / PILLAR_AXES.length) * Math.PI * 2 - Math.PI / 2;
+      const r = (v / 10) * radius;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+  }
+
+  const firstPoints = pointsFor(first);
+  const latestPoints = pointsFor(latest);
+
+  return (
+    <div className="mt-4 flex flex-col items-center">
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="block w-full max-w-[280px]"
+        role="img"
+        aria-label="Pillar drift between Day 1 and today"
+      >
+        {/* concentric rings at 2/4/6/8/10 */}
+        {[0.2, 0.4, 0.6, 0.8, 1].map((t) => (
+          <circle
+            key={t}
+            cx={cx}
+            cy={cy}
+            r={radius * t}
+            fill="none"
+            stroke="rgba(0,23,31,0.07)"
+            strokeWidth={1}
+          />
+        ))}
+        {/* axes */}
+        {PILLAR_AXES.map((_, i) => {
+          const angle = (i / PILLAR_AXES.length) * Math.PI * 2 - Math.PI / 2;
+          const x = cx + Math.cos(angle) * radius;
+          const y = cy + Math.sin(angle) * radius;
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={x}
+              y2={y}
+              stroke="rgba(0,23,31,0.06)"
+              strokeWidth={1}
+            />
+          );
+        })}
+        {/* Day 1 — dimmed */}
+        <polygon
+          points={firstPoints}
+          fill="rgba(0,23,31,0.10)"
+          stroke="rgba(0,23,31,0.40)"
+          strokeWidth={1.5}
+        />
+        {/* Today — solid cyan */}
+        <polygon
+          points={latestPoints}
+          fill="rgba(0,140,184,0.18)"
+          stroke="#008CB8"
+          strokeWidth={2}
+        />
+      </svg>
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-4 font-sans text-[11px] text-navy/55">
+        <span className="flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="inline-block h-2.5 w-2.5 rounded-full bg-navy/30"
+          />
+          Day 1
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="inline-block h-2.5 w-2.5 rounded-full bg-cyan-deep"
+          />
+          Today
+        </span>
+      </div>
+    </div>
   );
 }
 
