@@ -31,6 +31,12 @@ export default function SiteHeader({ user }: { user: PublicUser | null }) {
         <nav className="flex items-center gap-4 sm:gap-7">
           {user ? (
             <>
+              <Link
+                href="/coach"
+                className="whitespace-nowrap font-sans text-[13px] font-semibold text-cyan-deep transition-colors duration-150 hover:text-navy"
+              >
+                ✦ Companion
+              </Link>
               {/* Logo goes to /curriculum when signed in; this links the JQ history view */}
               <Link href="/dashboard" className={`hidden sm:inline ${navLink}`}>
                 JQ History

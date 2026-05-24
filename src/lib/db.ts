@@ -142,6 +142,25 @@ const SCHEMA = [
      mood_rating INT,
      UNIQUE (user_id, day_number)
    )`,
+  // --- Coach / AI companion ---
+  `CREATE TABLE IF NOT EXISTS chat_conversations (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     title TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     last_message_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_conversations_user
+     ON chat_conversations(user_id, last_message_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS chat_messages (
+     id BIGSERIAL PRIMARY KEY,
+     conversation_id TEXT NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+     role TEXT NOT NULL,
+     content TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_messages_conv
+     ON chat_messages(conversation_id, id)`,
   // Additive column migrations — safe and idempotent
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_started_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_completed_at TIMESTAMPTZ`,

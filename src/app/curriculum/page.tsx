@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
@@ -53,6 +54,37 @@ export default async function CurriculumDashboard() {
         <JqTile userId={user.id} />
         <PullQuote />
       </div>
+
+      <Link
+        href="/coach"
+        className="group mt-6 flex items-start gap-5 rounded-2xl border border-cyan-deep/30 bg-gradient-to-br from-white via-mist/60 to-mist p-6 transition hover:border-cyan-deep/60 hover:shadow-sm"
+      >
+        <div
+          aria-hidden
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-deep text-[20px] text-white"
+        >
+          ✦
+        </div>
+        <div className="flex-1">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-deep">
+            Always with you
+          </p>
+          <h3 className="mt-1 font-serif text-[22px] font-medium text-navy">
+            Talk to your <em className="text-cyan-deep">Companion</em>
+          </h3>
+          <p className="mt-1 font-sans text-[14px] font-light leading-relaxed text-navy/65">
+            An AI coach trained on Brent&apos;s book, retreats, and
+            methodology — here at three in the morning when you need someone
+            who actually knows the work.
+          </p>
+        </div>
+        <span
+          aria-hidden
+          className="hidden self-center font-sans text-[20px] text-cyan-deep transition group-hover:translate-x-1 sm:inline"
+        >
+          →
+        </span>
+      </Link>
 
       <section className="mt-12">
         <h2 className="font-serif text-[24px] font-medium tracking-tight text-navy">
