@@ -312,7 +312,23 @@ export default function CoachChat({
             </ul>
           )}
         </div>
-        <div className="border-t border-navy/10 p-4">
+        <div className="space-y-3 border-t border-navy/10 p-4">
+          <Link
+            href="/upgrade"
+            className="flex items-center justify-between rounded-2xl border border-cyan-deep/30 bg-gradient-to-br from-white to-mist px-3 py-3 transition hover:border-cyan-deep/60"
+          >
+            <div>
+              <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-deep">
+                Upgrade
+              </p>
+              <p className="mt-0.5 font-serif text-[14px] font-medium text-navy">
+                A human coach
+              </p>
+            </div>
+            <span aria-hidden className="text-[16px] text-cyan-deep">
+              →
+            </span>
+          </Link>
           <p className="font-sans text-[11px] font-light leading-relaxed text-navy/55">
             BrentBot is not a therapist or crisis line. If you&apos;re
             in crisis, call <strong className="text-navy">988</strong> in

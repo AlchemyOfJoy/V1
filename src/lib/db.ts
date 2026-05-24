@@ -324,6 +324,65 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_assignments_client
      ON coach_assignments(client_id, completed_at, due_at)`,
+
+  // --- Phase 2: coaching commerce (placeholders for Stripe Connect) ---
+
+  // User-facing waitlist for human coaching — since no coaches exist yet
+  `CREATE TABLE IF NOT EXISTS coaching_waitlist (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+     email TEXT NOT NULL,
+     package_id TEXT,
+     notes TEXT,
+     status TEXT NOT NULL DEFAULT 'waiting',
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_waitlist_status
+     ON coaching_waitlist(status, created_at DESC)`,
+
+  // Aspiring coach applications — paid intake into cert program
+  `CREATE TABLE IF NOT EXISTS cert_applications (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     status TEXT NOT NULL DEFAULT 'applied',
+     story TEXT,
+     experience TEXT,
+     why_aoj TEXT,
+     paid_at TIMESTAMPTZ,
+     approved_at TIMESTAMPTZ,
+     approved_by TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_cert_applications_status
+     ON cert_applications(status, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_cert_applications_user
+     ON cert_applications(user_id)`,
+
+  // Coaching subscriptions (user → coach pairing with billing state)
+  `CREATE TABLE IF NOT EXISTS coaching_subscriptions (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     coach_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+     package_id TEXT NOT NULL,
+     monthly_cents INT NOT NULL,
+     coach_bps INT NOT NULL DEFAULT 3000,
+     stripe_subscription_id TEXT,
+     stripe_customer_id TEXT,
+     status TEXT NOT NULL DEFAULT 'pending',
+     started_at TIMESTAMPTZ,
+     canceled_at TIMESTAMPTZ,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_coaching_subscriptions_user
+     ON coaching_subscriptions(user_id, status)`,
+  `CREATE INDEX IF NOT EXISTS idx_coaching_subscriptions_coach
+     ON coaching_subscriptions(coach_id, status)`,
+
+  // Per-coach Stripe Connect details (filled in Phase 3 when Stripe is wired)
+  `ALTER TABLE coach_profiles ADD COLUMN IF NOT EXISTS revenue_share_coach_bps INT NOT NULL DEFAULT 3000`,
+  `ALTER TABLE coach_profiles ADD COLUMN IF NOT EXISTS stripe_account_id TEXT`,
+  `ALTER TABLE coach_profiles ADD COLUMN IF NOT EXISTS stripe_onboarded_at TIMESTAMPTZ`,
   // Additive column migrations — safe and idempotent
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_started_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS curriculum_completed_at TIMESTAMPTZ`,

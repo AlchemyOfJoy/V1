@@ -21,7 +21,9 @@ export default async function CoachPortalLayout({
   children: React.ReactNode;
 }) {
   const user = await getCoachUser();
-  if (!user) redirect("/");
+  // Non-coaches landing on the portal (incl. via coach.brentfreeman.com)
+  // get routed to the cert program front door instead of bouncing home.
+  if (!user) redirect("/certify");
 
   // Make sure a coach_profiles row exists for this coach.
   await ensureCoachProfile(user.id);
