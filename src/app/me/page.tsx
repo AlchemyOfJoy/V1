@@ -223,6 +223,7 @@ export default async function MePage() {
       <section className="grid gap-2 sm:grid-cols-2">
         {[
           { href: "/coach", label: "Your Coach", icon: "✦", accent: true },
+          { href: "/courses", label: "Courses", icon: "▢" },
           { href: "/me/letters", label: "Letters", icon: "✉" },
           { href: "/me/my-joy", label: "My Joy Library", icon: "♥" },
           { href: "/curriculum/journal", label: "Journal", icon: "❋" },

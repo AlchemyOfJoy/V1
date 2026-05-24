@@ -336,6 +336,95 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS idx_quote_favorites_user
      ON quote_favorites(user_id, created_at DESC)`,
 
+  // --- Course Platform (Phase 5a foundations) ---
+  `CREATE TABLE IF NOT EXISTS courses (
+     id TEXT PRIMARY KEY,
+     slug TEXT UNIQUE NOT NULL,
+     title TEXT NOT NULL,
+     subtitle TEXT,
+     description TEXT,
+     cover_image_url TEXT,
+     course_type TEXT NOT NULL DEFAULT 'standard',
+     pricing_model TEXT NOT NULL DEFAULT 'free',
+     price_cents INT,
+     drip_mode TEXT NOT NULL DEFAULT 'open',
+     prerequisites JSONB NOT NULL DEFAULT '[]'::jsonb,
+     estimated_duration_minutes INT,
+     tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+     status TEXT NOT NULL DEFAULT 'draft',
+     instructor_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     published_at TIMESTAMPTZ,
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_courses_status
+     ON courses(status, published_at DESC)`,
+
+  `CREATE TABLE IF NOT EXISTS course_modules (
+     id TEXT PRIMARY KEY,
+     course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+     title TEXT NOT NULL,
+     description TEXT,
+     sort_order INT NOT NULL DEFAULT 100,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_modules_course
+     ON course_modules(course_id, sort_order)`,
+
+  `CREATE TABLE IF NOT EXISTS course_lessons (
+     id TEXT PRIMARY KEY,
+     module_id TEXT NOT NULL REFERENCES course_modules(id) ON DELETE CASCADE,
+     title TEXT NOT NULL,
+     description TEXT,
+     sort_order INT NOT NULL DEFAULT 100,
+     lesson_type TEXT NOT NULL DEFAULT 'text',
+     body TEXT,
+     video_embed_url TEXT,
+     audio_embed_url TEXT,
+     transcript TEXT,
+     coach_card_mode TEXT,
+     cross_link_href TEXT,
+     reflection_prompts JSONB NOT NULL DEFAULT '[]'::jsonb,
+     exercise_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+     estimated_duration_minutes INT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_lessons_module
+     ON course_lessons(module_id, sort_order)`,
+
+  `CREATE TABLE IF NOT EXISTS course_enrollments (
+     id TEXT PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+     enrolled_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     started_at TIMESTAMPTZ,
+     completed_at TIMESTAMPTZ,
+     source TEXT NOT NULL DEFAULT 'self_enroll',
+     UNIQUE (user_id, course_id)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_enrollments_user
+     ON course_enrollments(user_id, completed_at)`,
+
+  `CREATE TABLE IF NOT EXISTS course_lesson_progress (
+     id BIGSERIAL PRIMARY KEY,
+     enrollment_id TEXT NOT NULL REFERENCES course_enrollments(id) ON DELETE CASCADE,
+     lesson_id TEXT NOT NULL REFERENCES course_lessons(id) ON DELETE CASCADE,
+     started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     completed_at TIMESTAMPTZ,
+     notes TEXT,
+     reflection_responses JSONB NOT NULL DEFAULT '{}'::jsonb,
+     UNIQUE (enrollment_id, lesson_id)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_progress_enrollment
+     ON course_lesson_progress(enrollment_id, completed_at)`,
+
+  `CREATE TABLE IF NOT EXISTS course_certificates (
+     id TEXT PRIMARY KEY,
+     enrollment_id TEXT NOT NULL UNIQUE REFERENCES course_enrollments(id) ON DELETE CASCADE,
+     verification_code TEXT UNIQUE NOT NULL,
+     issued_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+
   // --- Phase 2: coaching commerce (placeholders for Stripe Connect) ---
 
   // User-facing waitlist for human coaching — since no coaches exist yet

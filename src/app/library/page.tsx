@@ -49,6 +49,24 @@ export default async function LibraryPage() {
         </h1>
       </header>
 
+      {/* Courses entry */}
+      <Link
+        href="/courses"
+        className="group flex items-center justify-between gap-4 rounded-2xl border border-cyan-deep/25 bg-gradient-to-br from-mist to-white px-5 py-4 transition hover:border-cyan-deep/60"
+      >
+        <div>
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-deep">
+            Deep dives
+          </p>
+          <p className="mt-1 font-serif text-[18px] font-medium text-navy">
+            Structured courses
+          </p>
+        </div>
+        <span aria-hidden className="text-[20px] text-cyan-deep transition group-hover:translate-x-1">
+          →
+        </span>
+      </Link>
+
       {/* Hero: today's drop, big */}
       <CoachCard
         size="hero"
