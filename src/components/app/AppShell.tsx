@@ -1,20 +1,20 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/SiteHeader";
-import TabBar, { SideRail } from "./TabBar";
-import FloatingActions from "./FloatingActions";
+import BottomNav from "./BottomNav";
 import StuckPrompt from "./StuckPrompt";
 import OfflineSync from "./OfflineSync";
 
 /**
- * AppShell — wraps every signed-in app surface in:
- *   • Top SiteHeader (logo, Companion link, Admin link if applicable, sign out)
- *   • Side rail (desktop) + bottom tab bar (mobile)
- *   • Persistent floating [+] List of Joy and [⚡] Reset Breath buttons
+ * AppShell — wraps every signed-in app surface (Flow Overhaul §2.2).
  *
- * Pages just render their content children; the shell handles chrome.
- * Celebration + Sacred Work providers are at root layout so curriculum
- * routes (which use their own layout) can fire celebrations too.
+ *   • Top SiteHeader (logo + Help "?" + sign out)
+ *   • Main content
+ *   • BottomNav: [Today] [⚡ Reset Breath] [≡ Switchboard]
+ *
+ * The five-tab nav and persistent floating [+] are gone. Browse, Tools,
+ * Library, Coach, Me — all one tap into the Switchboard. The List of
+ * Joy add lives inside the Daily Session and as a PWA shortcut.
  */
 export default async function AppShell({
   children,
@@ -26,14 +26,10 @@ export default async function AppShell({
   return (
     <>
       <SiteHeader user={user} />
-      <div className="flex min-h-[calc(100vh-4rem)]">
-        <SideRail />
-        <main className="min-w-0 flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
-          {children}
-        </main>
-      </div>
-      <TabBar />
-      <FloatingActions />
+      <main className="min-h-[calc(100vh-4rem-4rem)] pb-[calc(72px+env(safe-area-inset-bottom))]">
+        {children}
+      </main>
+      <BottomNav />
       <StuckPrompt />
       <OfflineSync />
     </>
