@@ -1,64 +1,87 @@
-/**
- * Coach Card — Brent's voice surfacing the right thought at the right
- * moment. Three voice modes (Steady / Reverent / Playful). Never
- * generative — every Coach Card body is curated content surfaced at the
- * right moment.
- *
- * Visual: soft cream background with faint gold border, quote in serif
- * italic, attribution "— BJF" in small caps, single subtle fade-in.
- */
+import { GoldGlow, SparkleMark } from "./Sparkle";
 
 export type CoachMode = "steady" | "reverent" | "playful";
+export type CoachSize = "compact" | "hero";
 
 export interface CoachCardProps {
   mode?: CoachMode;
+  size?: CoachSize;
   body: React.ReactNode;
   attribution?: string;
   source?: string;
-  /** Optional eyebrow above the quote (e.g. "Today's Joy Drop"). */
   eyebrow?: string;
   className?: string;
 }
 
-const MODE_STYLES: Record<CoachMode, string> = {
-  steady:
-    "border-gold/35 bg-[#FAF6EC] text-navy",
-  reverent:
-    "border-navy/25 bg-navy/[0.04] text-navy",
-  playful:
-    "border-cyan-deep/30 bg-gradient-to-br from-[#FAF6EC] to-white text-navy",
+const MODE_BG: Record<CoachMode, string> = {
+  steady: "bg-[#FAF6EC] border-gold/30",
+  reverent: "bg-navy/[0.03] border-navy/20",
+  playful: "bg-gradient-to-br from-[#FAF6EC] via-white to-mist border-cyan-deep/25",
 };
 
 export default function CoachCard({
   mode = "steady",
+  size = "compact",
   body,
   attribution = "BJF",
   source,
   eyebrow,
   className,
 }: CoachCardProps) {
+  const isHero = size === "hero";
+
   return (
     <article
-      className={`relative rounded-3xl border px-6 py-5 animate-fade-in shadow-[0_1px_2px_rgba(0,23,31,0.04)] ${MODE_STYLES[mode]} ${className ?? ""}`}
+      className={`relative overflow-hidden rounded-3xl border ${MODE_BG[mode]} ${
+        isHero ? "px-7 py-9 sm:px-10 sm:py-11" : "px-6 py-5"
+      } ${className ?? ""}`}
     >
-      {eyebrow && (
-        <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-deep">
-          {eyebrow}
-        </p>
+      {isHero && <GoldGlow />}
+      {isHero && (
+        <SparkleMark
+          size={36}
+          className="absolute right-6 top-6 text-gold/60"
+        />
       )}
-      <div
-        className={`font-serif leading-[1.65] ${
-          mode === "reverent"
-            ? "text-[18px] italic text-navy/85"
-            : "text-[19px] italic text-navy"
-        } ${eyebrow ? "mt-2" : ""}`}
-      >
-        {body}
+
+      <div className="relative">
+        {eyebrow && (
+          <p
+            className={`font-sans font-semibold uppercase tracking-[0.22em] text-cyan-deep ${
+              isHero ? "text-[11px]" : "text-[10px]"
+            }`}
+          >
+            {eyebrow}
+          </p>
+        )}
+        <div
+          className={`font-serif text-navy ${
+            isHero
+              ? "mt-4 text-[24px] leading-[1.45] sm:text-[28px] sm:leading-[1.4]"
+              : "mt-2 text-[18px] leading-[1.6] italic"
+          }`}
+        >
+          {isHero ? (
+            <>
+              <span className="text-gold">&ldquo;</span>
+              {body}
+              <span className="text-gold">&rdquo;</span>
+            </>
+          ) : (
+            body
+          )}
+        </div>
+        <p
+          className={`font-sans uppercase tracking-[0.22em] text-navy/55 ${
+            isHero ? "mt-6 text-[11px]" : "mt-3 text-[10px]"
+          }`}
+        >
+          — {attribution}
+          {source && (
+            <span className="text-navy/35"> · {source}</span>
+          )}
+        </p>
       </div>
-      <p className="mt-3 font-sans text-[11px] uppercase tracking-[0.22em] text-navy/55">
-        — {attribution}
-        {source ? <span className="text-navy/35"> · {source}</span> : null}
-      </p>
     </article>
   );
 }
