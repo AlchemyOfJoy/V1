@@ -172,12 +172,17 @@ export async function POST(req: NextRequest) {
 
         void final.usage; // available if we ever want to log it
       } catch (e) {
-        const message =
-          e instanceof Anthropic.RateLimitError
-            ? "The Coach is being rate-limited by Anthropic right now. Try again in a moment."
-            : e instanceof Anthropic.APIError
-              ? "The Coach hit a snag connecting. Try again in a moment."
-              : "Something went sideways. Try again?";
+        let message: string;
+        if (e instanceof Anthropic.RateLimitError) {
+          message = "The Coach is being rate-limited by Anthropic right now. Try again in a moment.";
+        } else if (e instanceof Anthropic.APIError) {
+          // Surface the actual status + short Anthropic message so we
+          // can diagnose 401 (bad key) vs 404 (wrong model) vs 529 etc.
+          const detail = String(e.message ?? "").slice(0, 240);
+          message = `Coach error · ${e.status ?? "?"} · ${detail}`;
+        } else {
+          message = `Something went sideways: ${String((e as Error)?.message ?? e).slice(0, 240)}`;
+        }
         controller.enqueue(encoder.encode(`\n\n[${message}]`));
         console.error("[coach] stream failed:", e);
       } finally {
