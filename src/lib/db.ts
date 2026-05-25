@@ -19,11 +19,24 @@ function pool(): Pool {
       connectionString: CONNECTION,
       // Hosted Postgres (Neon, etc.) requires SSL; local Postgres does not.
       ssl: IS_LOCAL ? undefined : { rejectUnauthorized: false },
-      max: 3,
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      // Fast failure beats hanging the request for 30s+
+      connectionTimeoutMillis: 7_000,
     });
   }
   return globalForDb.__jqPool;
 }
+
+/**
+ * Bump this whenever you add a new statement to SCHEMA below. The fast
+ * path checks this against the value stored in the schema_version table;
+ * if they match, the 80+ DDL statements are skipped entirely.
+ *
+ * On a fresh database, the value is missing and migrations run as normal,
+ * then the table is seeded with the current version.
+ */
+const SCHEMA_VERSION = 1;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -530,14 +543,42 @@ const SCHEMA = [
 ];
 
 /** Create tables on first use — idempotent, runs once per process.
- *  Each statement runs separately so it works through any connection pooler.
+ *
+ *  Fast path: a single SELECT from schema_version tells us if migrations
+ *  are already up to date for this DB. If yes, the 80+ DDL statements
+ *  are skipped — turning a cold start from ~80 round-trips to 1.
+ *
+ *  Slow path: on a fresh DB (or after a schema bump), the loop runs,
+ *  then schema_version is upserted with SCHEMA_VERSION so future cold
+ *  starts skip.
+ *
  *  A failed run is not cached, so the next request retries. */
 function ensureSchema(): Promise<void> {
   if (!globalForDb.__jqSchema) {
     globalForDb.__jqSchema = (async () => {
-      for (const stmt of SCHEMA) {
-        await pool().query(stmt);
+      const p = pool();
+      // Fast path — has the schema_version table been created and
+      // populated with our target version? If so, skip the loop.
+      try {
+        const r = await p.query<{ version: number }>(
+          `SELECT version FROM schema_version LIMIT 1`,
+        );
+        if (r.rows[0]?.version >= SCHEMA_VERSION) return;
+      } catch {
+        // Table doesn't exist yet — fall through to migrations.
       }
+      // Slow path — run every statement, then stamp the version.
+      for (const stmt of SCHEMA) {
+        await p.query(stmt);
+      }
+      await p.query(
+        `CREATE TABLE IF NOT EXISTS schema_version (version INT PRIMARY KEY)`,
+      );
+      await p.query(
+        `INSERT INTO schema_version (version) VALUES ($1)
+           ON CONFLICT (version) DO NOTHING`,
+        [SCHEMA_VERSION],
+      );
     })().catch((err) => {
       globalForDb.__jqSchema = undefined;
       throw err;

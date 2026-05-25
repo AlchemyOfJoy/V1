@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { PublicUser } from "@/lib/auth";
-import { isAdminUser } from "@/lib/admin";
 import { query } from "@/lib/db";
 import { btnPrimarySm } from "@/lib/ui";
 import BrandLogo from "./BrandLogo";
@@ -11,16 +10,29 @@ import HelpButton from "./app/HelpButton";
 const navLink =
   "whitespace-nowrap font-sans text-[13px] text-navy/70 transition-colors duration-150 hover:text-cyan-deep";
 
+function envAdmins(): Set<string> {
+  return new Set(
+    (process.env.ADMIN_EMAILS ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
 export default async function SiteHeader({ user }: { user: PublicUser | null }) {
-  const admin = user ? await isAdminUser(user) : false;
+  // One query for both signals — saves a round-trip per signed-in page.
+  let admin = false;
   let isCoach = false;
   if (user) {
+    admin = envAdmins().has(user.email.toLowerCase());
     try {
-      const rows = await query<{ role: string | null }>(
-        `SELECT role FROM users WHERE id = $1`,
-        [user.id],
-      );
-      isCoach = rows[0]?.role === "coach";
+      const rows = await query<{
+        is_admin: boolean | null;
+        role: string | null;
+      }>(`SELECT is_admin, role FROM users WHERE id = $1`, [user.id]);
+      const row = rows[0];
+      if (row?.is_admin === true) admin = true;
+      isCoach = row?.role === "coach";
     } catch {
       // best effort
     }
