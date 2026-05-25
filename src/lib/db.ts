@@ -36,7 +36,7 @@ function pool(): Pool {
  * On a fresh database, the value is missing and migrations run as normal,
  * then the table is seeded with the current version.
  */
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -506,6 +506,17 @@ const SCHEMA = [
   // Challenge Cadence Directive — three user states + completion-based day count
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_mode TEXT NOT NULL DEFAULT 'challenge'`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_completed_at TIMESTAMPTZ`,
+  // Forgot-password reset tokens — hashed, single-use, time-bound
+  `CREATE TABLE IF NOT EXISTS password_resets (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     token_hash TEXT NOT NULL UNIQUE,
+     expires_at TIMESTAMPTZ NOT NULL,
+     used_at TIMESTAMPTZ,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_password_resets_user
+     ON password_resets(user_id, created_at DESC)`,
   // --- Notifications: per-user channel prefs + idempotent delivery log ---
   `CREATE TABLE IF NOT EXISTS notification_preferences (
      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
