@@ -630,10 +630,10 @@ function HowToUse({
           knows what to show you. You don&apos;t have to figure it out.
         </p>
 
-        {/* The three touchpoints */}
+        {/* The three tabs + floating Reset Breath */}
         <section className="mt-8 rounded-3xl border border-[#2A2724]/12 bg-white p-5">
           <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-[#C89A3F]">
-            Three buttons. That&apos;s all the navigation.
+            Three tabs. One floating button. That&apos;s it.
           </p>
           <ul className="mt-4 space-y-4">
             <li className="flex items-start gap-4">
@@ -648,23 +648,7 @@ function HowToUse({
                   Today
                 </p>
                 <p className="mt-0.5 font-sans text-[13px] font-light text-[#2A2724]/65">
-                  Your daily anchor. Tap from anywhere to come back here.
-                </p>
-              </div>
-            </li>
-            <li className="flex items-start gap-4">
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#008CB8] text-white shadow-md"
-              >
-                ⚡
-              </span>
-              <div>
-                <p className="font-sans text-[14px] font-semibold text-[#2A2724]">
-                  Reset Breath
-                </p>
-                <p className="mt-0.5 font-sans text-[13px] font-light text-[#2A2724]/65">
-                  60 seconds, any moment. The panic button. The pause.
+                  Your daily anchor — what to do, in order, today.
                 </p>
               </div>
             </li>
@@ -673,15 +657,48 @@ function HowToUse({
                 aria-hidden
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#2A2724]/20 bg-white text-[#2A2724]"
               >
-                ≡
+                ❋
               </span>
               <div>
                 <p className="font-sans text-[14px] font-semibold text-[#2A2724]">
-                  Switchboard
+                  The Book
                 </p>
                 <p className="mt-0.5 font-sans text-[13px] font-light text-[#2A2724]/65">
-                  Library, Tools, your Coach, your wins, settings —
-                  everything else lives one tap in.
+                  Brent&apos;s four parts, twenty chapters. Learn, practice,
+                  integrate.
+                </p>
+              </div>
+            </li>
+            <li className="flex items-start gap-4">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#2A2724]/20 bg-white text-[#2A2724]"
+              >
+                ✦
+              </span>
+              <div>
+                <p className="font-sans text-[14px] font-semibold text-[#2A2724]">
+                  My Alchemy
+                </p>
+                <p className="mt-0.5 font-sans text-[13px] font-light text-[#2A2724]/65">
+                  Your personal record — wins, documents, letters from past you.
+                </p>
+              </div>
+            </li>
+            <li className="flex items-start gap-4 border-t border-[#2A2724]/10 pt-4">
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A8E8] text-white"
+              >
+                ⚡
+              </span>
+              <div>
+                <p className="font-sans text-[14px] font-semibold text-[#2A2724]">
+                  Reset Breath
+                </p>
+                <p className="mt-0.5 font-sans text-[13px] font-light text-[#2A2724]/65">
+                  Always floating. Tap for a 60-second breath. Long-press for
+                  the Right Now menu when you need help in the moment.
                 </p>
               </div>
             </li>
@@ -766,7 +783,7 @@ function Reveal({
     ? "What you’re about to walk is a 90-day arc. Day by day, week by week. By the end you’ll have laid the foundation for the rest of it."
     : isPractice
       ? "Today’s rhythm: morning SubScript, evening close, a Pulse, a Joy added when it strikes."
-      : "Pull anything from the Switchboard. Start the Challenge whenever you want — Settings has the switch.";
+      : "Explore The Book at your own pace. Start the Challenge whenever you want — Settings has the switch.";
 
   const cta = isChallenge
     ? "Begin Day 1 →"

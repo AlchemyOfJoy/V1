@@ -2,19 +2,17 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/SiteHeader";
 import BottomNav from "./BottomNav";
+import ResetBreathButton from "./ResetBreathButton";
 import StuckPrompt from "./StuckPrompt";
 import OfflineSync from "./OfflineSync";
 
 /**
- * AppShell — wraps every signed-in app surface (Flow Overhaul §2.2).
+ * AppShell — wraps every signed-in app surface per the Master Prompt §5.
  *
- *   • Top SiteHeader (logo + Help "?" + sign out)
+ *   • Top SiteHeader (logo + help + sign out)
  *   • Main content
- *   • BottomNav: [Today] [⚡ Reset Breath] [≡ Switchboard]
- *
- * The five-tab nav and persistent floating [+] are gone. Browse, Tools,
- * Library, Coach, Me — all one tap into the Switchboard. The List of
- * Joy add lives inside the Daily Session and as a PWA shortcut.
+ *   • BottomNav: TODAY · THE BOOK · MY ALCHEMY (three tabs only)
+ *   • Floating ⚡ Reset Breath, long-press → Right Now sheet
  */
 export default async function AppShell({
   children,
@@ -30,6 +28,7 @@ export default async function AppShell({
         {children}
       </main>
       <BottomNav />
+      <ResetBreathButton />
       <StuckPrompt />
       <OfflineSync />
     </>
