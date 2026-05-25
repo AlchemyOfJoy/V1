@@ -301,32 +301,12 @@ export default async function MyAlchemyPage() {
 
       <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
 
-      {/* ─── FOOTER LINKS ───────────────────────────────────── */}
-      <nav aria-label="Account links">
+      {/* ─── SETTINGS (the only secondary nav per UI/UX §0) ── */}
+      <nav aria-label="Settings">
         <ul className="grid grid-cols-2 gap-y-3 font-sans text-[13px] text-slate sm:grid-cols-3">
-          <li>
-            <Link href="/coach" className="hover:text-cyan">
-              BrentBot →
-            </Link>
-          </li>
-          <li>
-            <Link href="/courses" className="hover:text-cyan">
-              Courses →
-            </Link>
-          </li>
-          <li>
-            <Link href="/3am" className="hover:text-cyan">
-              For hard hours →
-            </Link>
-          </li>
           <li>
             <Link href="/me/notifications" className="hover:text-cyan">
               Notifications →
-            </Link>
-          </li>
-          <li>
-            <Link href="/curriculum/journal" className="hover:text-cyan">
-              Journal →
             </Link>
           </li>
           <li>

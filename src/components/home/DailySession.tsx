@@ -75,7 +75,6 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
         <MissedDaysCard
           currentDay={Number(p.currentDay ?? 1)}
           gap={Number(p.gap ?? 0)}
-          skipTo={Number(p.skipTo ?? 1)}
           onAdvance={advance}
         />
       );
@@ -659,12 +658,10 @@ function CloseCard({
 function MissedDaysCard({
   currentDay,
   gap,
-  skipTo,
   onAdvance,
 }: {
   currentDay: number;
   gap: number;
-  skipTo: number;
   onAdvance: () => void;
 }) {
   return (
@@ -689,14 +686,11 @@ function MissedDaysCard({
         >
           Pick up Day {currentDay} →
         </button>
-        {skipTo > currentDay && (
-          <Link
-            href={`/curriculum/90-day-challenge/day/${skipTo}`}
-            className="block text-center font-sans text-[12px] font-semibold text-navy/55 hover:text-navy"
-          >
-            Skip to today’s Day {skipTo}
-          </Link>
-        )}
+        {/* Per UI/UX Overhaul §2.1.8: only "pick up" + "just a breath".
+            No calendar view exists, so no "skip to today" link. */}
+        <p className="text-center font-sans text-[11px] text-slate/70">
+          The work is patient. No streak to recover.
+        </p>
       </div>
     </div>
   );

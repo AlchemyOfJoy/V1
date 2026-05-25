@@ -3,16 +3,18 @@ import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/SiteHeader";
 import BottomNav from "./BottomNav";
 import ResetBreathButton from "./ResetBreathButton";
-import StuckPrompt from "./StuckPrompt";
 import OfflineSync from "./OfflineSync";
 
 /**
- * AppShell — wraps every signed-in app surface per the Master Prompt §5.
+ * AppShell — per UI/UX Overhaul §0:
  *
- *   • Top SiteHeader (logo + help + sign out)
+ *   • Top SiteHeader (logo + sign out)
  *   • Main content
- *   • BottomNav: TODAY · THE BOOK · MY ALCHEMY (three tabs only)
- *   • Floating ⚡ Reset Breath, long-press → Right Now sheet
+ *   • BottomNav: TODAY · THE BOOK · MY ALCHEMY (the ONLY navigation)
+ *   • Floating ⚡ Reset Breath (tap = 60s, long-press = Right Now)
+ *
+ * No StuckPrompt, no Help button, no Switchboard, no FAB for List of
+ * Joy. The directive's deletion checklist is enforced here.
  */
 export default async function AppShell({
   children,
@@ -29,7 +31,6 @@ export default async function AppShell({
       </main>
       <BottomNav />
       <ResetBreathButton />
-      <StuckPrompt />
       <OfflineSync />
     </>
   );

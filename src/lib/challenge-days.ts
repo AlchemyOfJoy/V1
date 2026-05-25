@@ -83,7 +83,7 @@ export const DAYS: DayTask[] = [
     title: "The four chemicals of joy",
     description:
       "Read the first Foundation card. Dopamine, serotonin, oxytocin, endorphins — and why neurogenesis means you can rewire.",
-    primaryHref: "/journey/foundations/joy-chemicals",
+    primaryHref: "/book/1",
     primaryLabel: "Read · 2 min",
     estimatedMin: 5,
   },
@@ -93,7 +93,7 @@ export const DAYS: DayTask[] = [
     title: "The Reticular Activating System",
     description:
       "What you focus on, you find. Read the second foundation card and then add 3 things to your List of Joy.",
-    primaryHref: "/journey/foundations/reticular-activating-system",
+    primaryHref: "/book/1",
     primaryLabel: "Read · 2 min",
     estimatedMin: 8,
   },
@@ -103,7 +103,7 @@ export const DAYS: DayTask[] = [
     title: "Brain Waves",
     description:
       "Why the SubScript is read in the theta window — first thing in the morning, last thing at night.",
-    primaryHref: "/journey/foundations/brain-waves",
+    primaryHref: "/book/1",
     primaryLabel: "Read · 2 min",
     estimatedMin: 5,
   },

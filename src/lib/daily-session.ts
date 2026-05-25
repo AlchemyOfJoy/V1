@@ -282,8 +282,8 @@ async function practiceSuggestion(
     eyebrow: "Today",
     title: "Take a Spirit Walk",
     subtitle: "Twenty minutes outside, no headphones. Notice three things.",
-    href: "/curriculum/toolkit",
-    primaryLabel: "Browse the Tools",
+    href: "/book",
+    primaryLabel: "Open The Book",
     estimatedMin: 20,
   };
 }

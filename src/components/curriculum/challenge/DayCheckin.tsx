@@ -116,7 +116,7 @@ export default function DayCheckin({
     }
     setTimeout(
       () => {
-        router.push("/curriculum/90-day-challenge");
+        router.push("/home");
         router.refresh();
       },
       isMajor ? 5000 : isMilestone ? 3000 : 900,

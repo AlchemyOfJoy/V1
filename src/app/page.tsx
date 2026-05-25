@@ -38,8 +38,8 @@ function doorways(loggedIn: boolean): Doorway[] {
         "Four modules — Science of Joy, Joyful Operating System®, Forgiveness, Bold Action — paced for real life.",
       icon: <LatestIcon size={24} />,
       status: "available",
-      href: signupOr("/curriculum"),
-      ctaAuthedHref: "/curriculum",
+      href: signupOr("/book"),
+      ctaAuthedHref: "/book",
       ctaLabel: loggedIn ? "Continue your journey" : "Begin the curriculum",
     },
     {
@@ -57,7 +57,7 @@ function doorways(loggedIn: boolean): Doorway[] {
         "Twenty practices — Reset Breath, Reframe Ritual, Joy Judo, JOMO — to return to when life asks something of you.",
       icon: <SaveIcon size={24} />,
       status: "available",
-      href: signupOr("/curriculum/toolkit"),
+      href: signupOr("/book"),
       ctaLabel: "Browse the toolkit",
     },
     {
@@ -105,7 +105,7 @@ const ITT_PILLARS = [
 export default async function HomePage() {
   const user = await getCurrentUser();
   const loggedIn = !!user;
-  const primaryHref = loggedIn ? "/curriculum" : "/signup";
+  const primaryHref = loggedIn ? "/book" : "/signup";
   const jqHref = loggedIn ? "/assessment" : "/signup";
 
   return (

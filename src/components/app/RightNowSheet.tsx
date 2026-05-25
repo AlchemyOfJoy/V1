@@ -26,17 +26,17 @@ const OPTIONS: { glyph: string; label: string; href: string }[] = [
   {
     glyph: "◯",
     label: "to feel held",
-    href: "/3am",
+    href: "/me/my-joy",
   },
   {
     glyph: "✋",
     label: "to release anger",
-    href: "/curriculum/toolkit",
+    href: "/curriculum/module/04-bold-action/60-second-reset",
   },
   {
     glyph: "✦",
     label: "to find some light",
-    href: "/library",
+    href: "/me/my-joy",
   },
   {
     glyph: "〇",
