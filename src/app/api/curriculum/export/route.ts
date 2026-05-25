@@ -34,7 +34,7 @@ export async function GET() {
          FROM worksheet_responses WHERE user_id = $1`,
       [user.id],
     ),
-    listJoyItems(user.id),
+    listJoyItems(user.id, Number.POSITIVE_INFINITY),
     listSnapshots(user.id, 60),
     listForgivenessSubjects(user.id),
     getChallengeStatus(user.id),

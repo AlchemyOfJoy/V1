@@ -21,7 +21,7 @@ export default async function ListOfJoyPage() {
   const section = findSection(mod, "list-of-joy");
   if (!section) redirect("/curriculum/module/02-joyful-operating-system");
 
-  const items = await listJoyItems(user.id);
+  const items = await listJoyItems(user.id, Number.POSITIVE_INFINITY);
 
   return (
     <main className="px-6 py-12 sm:py-16">

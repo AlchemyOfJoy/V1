@@ -9,13 +9,32 @@ export interface ListOfJoyItem {
   created_at: string | Date;
 }
 
-export async function listJoyItems(userId: string): Promise<ListOfJoyItem[]> {
+/**
+ * Default to a bounded read so the Daily Session and other read-only
+ * surfaces don't pull a 500-row list when they only render three.
+ * Pass an explicit limit (or `Number.POSITIVE_INFINITY`) to fetch all.
+ */
+export async function listJoyItems(
+  userId: string,
+  limit: number = 50,
+): Promise<ListOfJoyItem[]> {
+  const bounded = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : null;
+  if (bounded === null) {
+    return query<ListOfJoyItem>(
+      `SELECT id, user_id, content, priority_pillar, sub_pillar, created_at
+         FROM list_of_joy_items
+        WHERE user_id = $1
+        ORDER BY created_at DESC`,
+      [userId],
+    );
+  }
   return query<ListOfJoyItem>(
     `SELECT id, user_id, content, priority_pillar, sub_pillar, created_at
        FROM list_of_joy_items
       WHERE user_id = $1
-      ORDER BY created_at DESC`,
-    [userId],
+      ORDER BY created_at DESC
+      LIMIT $2`,
+    [userId, bounded],
   );
 }
 

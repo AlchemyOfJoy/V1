@@ -36,7 +36,7 @@ function pool(): Pool {
  * On a fresh database, the value is missing and migrations run as normal,
  * then the table is seeded with the current version.
  */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -517,6 +517,20 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_password_resets_user
      ON password_resets(user_id, created_at DESC)`,
+  // Practice version history — the Master Prompt §11 commitment that
+  // every Practice is "editable forever" with version tracking. One
+  // row per snapshot; coalesced server-side so autosave doesn't spam.
+  `CREATE TABLE IF NOT EXISTS worksheet_response_versions (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     worksheet_id TEXT NOT NULL,
+     data JSONB NOT NULL,
+     content_hash TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_worksheet_versions_lookup
+     ON worksheet_response_versions(user_id, worksheet_id, created_at DESC)`,
   // --- Notifications: per-user channel prefs + idempotent delivery log ---
   `CREATE TABLE IF NOT EXISTS notification_preferences (
      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -572,22 +586,33 @@ function ensureSchema(): Promise<void> {
       // populated with our target version? If so, skip the loop.
       try {
         const r = await p.query<{ version: number }>(
-          `SELECT version FROM schema_version LIMIT 1`,
+          `SELECT version FROM schema_version WHERE id = true LIMIT 1`,
         );
         if (r.rows[0]?.version >= SCHEMA_VERSION) return;
+        // If the table exists in the legacy multi-row shape, fall
+        // through to recreate the sentinel row.
       } catch {
         // Table doesn't exist yet — fall through to migrations.
       }
-      // Slow path — run every statement, then stamp the version.
+      // Slow path — run every statement, then stamp the version. The
+      // schema_version table is a single-row sentinel so upserts can
+      // actually update the recorded version. Drop any prior table
+      // (which used PK-on-version and silently failed to update on
+      // bumps, forcing migrations to re-run on every cold start) and
+      // recreate fresh.
       for (const stmt of SCHEMA) {
         await p.query(stmt);
       }
+      await p.query(`DROP TABLE IF EXISTS schema_version`);
       await p.query(
-        `CREATE TABLE IF NOT EXISTS schema_version (version INT PRIMARY KEY)`,
+        `CREATE TABLE schema_version (
+           id BOOLEAN PRIMARY KEY DEFAULT true CHECK (id = true),
+           version INT NOT NULL
+         )`,
       );
       await p.query(
-        `INSERT INTO schema_version (version) VALUES ($1)
-           ON CONFLICT (version) DO NOTHING`,
+        `INSERT INTO schema_version (id, version) VALUES (true, $1)
+           ON CONFLICT (id) DO UPDATE SET version = EXCLUDED.version`,
         [SCHEMA_VERSION],
       );
     })().catch((err) => {

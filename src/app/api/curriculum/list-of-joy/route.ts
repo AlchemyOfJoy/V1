@@ -20,7 +20,7 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user)
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-  const items = await listJoyItems(user.id);
+  const items = await listJoyItems(user.id, Number.POSITIVE_INFINITY);
   return NextResponse.json({ items });
 }
 
