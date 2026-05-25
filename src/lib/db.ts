@@ -511,7 +511,7 @@ const SCHEMA = [
      letter_delivered BOOLEAN NOT NULL DEFAULT true,
      gone_dark BOOLEAN NOT NULL DEFAULT true,
      milestone BOOLEAN NOT NULL DEFAULT true,
-     unsubscribe_token TEXT NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex'),
+     unsubscribe_token TEXT,
      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
   `CREATE TABLE IF NOT EXISTS notification_deliveries (
