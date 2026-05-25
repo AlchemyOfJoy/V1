@@ -1,20 +1,43 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { startChallenge } from "@/lib/challenge";
+import { setChallengeMode, startChallenge } from "@/lib/challenge";
 
 /**
- * Onboarding completion → auto-start the 90-Day Challenge.
+ * Onboarding completion (Cadence Directive §1 / §10).
  *
- * Every user from this point forward is on Day 1 of the structured
- * 90-day arc. The challenge is the spine of how the app is used; no
- * more separate "Begin Day 1" opt-in.
+ * The user has just walked the tutorial. The door they picked sets
+ * their starting state:
+ *
+ *   "book"      → Challenge mode (with optional book sync later)
+ *   "retreat"   → Practice mode (assumes some install already done)
+ *   "challenge" → Challenge mode (full 90-Day arc)
+ *   "explore"   → Free mode (no prescribed sequence)
+ *
+ * Falls back to Challenge if no door was selected — the directive's
+ * default for new signups.
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
+
+  let body: { door?: unknown } = {};
+  try {
+    body = await req.json();
+  } catch {
+    // empty body is fine
+  }
+  const door = typeof body.door === "string" ? body.door : null;
+
+  const mode =
+    door === "explore"
+      ? "free"
+      : door === "retreat"
+        ? "practice"
+        : "challenge";
+
   try {
     await query(
       `UPDATE users
@@ -22,8 +45,11 @@ export async function POST() {
        WHERE id = $1`,
       [user.id],
     );
-    await startChallenge(user.id);
-    return NextResponse.json({ ok: true });
+    await setChallengeMode(user.id, mode);
+    if (mode === "challenge") {
+      await startChallenge(user.id);
+    }
+    return NextResponse.json({ ok: true, mode });
   } catch (err) {
     console.error("[onboarding] complete failed:", err);
     return NextResponse.json(
