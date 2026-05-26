@@ -230,7 +230,9 @@ export async function getDailySession(opts: {
         cards.push({
           kind: "whats_next",
           payload: {
-            eyebrow: `Day ${currentDay} · ${phaseForDay(currentDay)?.title ?? ""}`,
+            eyebrow:
+              task.eyebrowLabel ??
+              `Day ${currentDay} · ${phaseForDay(currentDay)?.title ?? ""}`,
             title: task.title,
             subtitle: task.description,
             href: task.primaryHref,
