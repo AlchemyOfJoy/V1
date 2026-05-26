@@ -36,7 +36,7 @@ function pool(): Pool {
  * On a fresh database, the value is missing and migrations run as normal,
  * then the table is seeded with the current version.
  */
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -535,6 +535,21 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_worksheet_versions_lookup
      ON worksheet_response_versions(user_id, worksheet_id, created_at DESC)`,
+  // Memory Stones — replayable celebration tiles (Master Prompt §13).
+  // Saved every time a Bloom or Ascension celebration fires; displayed
+  // as the horizontal scrolling row in My Alchemy → The Memories.
+  `CREATE TABLE IF NOT EXISTS memory_stones (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     tier TEXT NOT NULL,
+     eyebrow TEXT,
+     headline TEXT NOT NULL,
+     subline TEXT,
+     context JSONB NOT NULL DEFAULT '{}'::jsonb,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_memory_stones_user
+     ON memory_stones(user_id, created_at DESC)`,
   // --- Notifications: per-user channel prefs + idempotent delivery log ---
   `CREATE TABLE IF NOT EXISTS notification_preferences (
      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { getChallengeStatus } from "@/lib/challenge";
 import { listEarned } from "@/lib/badges";
+import { listMemoryStones } from "@/lib/memory-stones";
 import { recentPulses } from "@/lib/joy-pulse";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default async function MyAlchemyPage() {
     assessRows,
     resetCountRows,
     lettersRows,
+    memoryStones,
   ] = await Promise.all([
     query<{ c: string }>(
       `SELECT COUNT(*)::text AS c FROM list_of_joy_items WHERE user_id = $1`,
@@ -64,6 +66,7 @@ export default async function MyAlchemyPage() {
        FROM letters_to_self WHERE user_id = $1`,
       [user.id],
     ),
+    listMemoryStones(user.id, 24),
   ]);
 
   const firstName = user.name?.split(" ")[0] ?? user.email.split("@")[0];
@@ -219,30 +222,69 @@ export default async function MyAlchemyPage() {
 
       <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
 
-      {/* ─── THE MEMORIES (badges as Memory Stones stand-in) ── */}
-      {badges.length > 0 && (
+      {/* ─── THE MEMORIES (Memory Stones — Master Prompt §13) ── */}
+      {(memoryStones.length > 0 || badges.length > 0) && (
         <>
           <section>
             <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
               The Memories
             </p>
+            <p className="mt-3 font-serif text-[15px] italic leading-relaxed text-slate">
+              {memoryStones.length > 0
+                ? "Tap any stone to re-experience that moment."
+                : "Earn your first Memory Stone by completing a Practice or a Day."}
+            </p>
             <div className="mt-5 flex gap-3 overflow-x-auto pb-2">
-              {badges.slice(0, 12).map((b) => (
-                <div
-                  key={b.badge_id}
-                  className="flex h-24 w-24 shrink-0 flex-col items-center justify-center border border-slate/20 bg-white p-3 text-center"
-                >
-                  <span aria-hidden className="text-[22px] text-gold">
-                    ✦
-                  </span>
-                  <p className="mt-1 font-sans text-[10px] uppercase tracking-[0.12em] text-slate">
-                    {new Date(b.earned_at as unknown as string).toLocaleDateString(
-                      undefined,
-                      { month: "short", day: "numeric" },
-                    )}
-                  </p>
-                </div>
-              ))}
+              {memoryStones.map((s) => {
+                const date = new Date(s.created_at as unknown as string);
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/me/memory-stones/${s.id}`}
+                    className={`group flex h-32 w-32 shrink-0 flex-col items-center justify-between border bg-white p-3 text-center transition hover:border-cyan ${
+                      s.tier === "ascension"
+                        ? "border-gold/50"
+                        : "border-slate/20"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`text-[24px] ${
+                        s.tier === "ascension" ? "text-gold" : "text-cyan"
+                      }`}
+                    >
+                      ✦
+                    </span>
+                    <p className="font-serif text-[12px] italic leading-tight text-navy line-clamp-3">
+                      {s.headline}
+                    </p>
+                    <p className="font-sans text-[10px] uppercase tracking-[0.12em] text-slate">
+                      {date.toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </Link>
+                );
+              })}
+              {/* Legacy badges shown alongside until they're migrated. */}
+              {memoryStones.length === 0 &&
+                badges.slice(0, 12).map((b) => (
+                  <div
+                    key={b.badge_id}
+                    className="flex h-24 w-24 shrink-0 flex-col items-center justify-center border border-slate/20 bg-white p-3 text-center"
+                  >
+                    <span aria-hidden className="text-[22px] text-gold">
+                      ✦
+                    </span>
+                    <p className="mt-1 font-sans text-[10px] uppercase tracking-[0.12em] text-slate">
+                      {new Date(b.earned_at as unknown as string).toLocaleDateString(
+                        undefined,
+                        { month: "short", day: "numeric" },
+                      )}
+                    </p>
+                  </div>
+                ))}
             </div>
           </section>
           <div aria-hidden className="my-10 h-px w-full bg-slate/15" />

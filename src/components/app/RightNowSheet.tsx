@@ -127,6 +127,13 @@ export default function RightNowSheet({
         >
           I just need a breath
         </Link>
+        <Link
+          href="/right-now/check-in"
+          onClick={onClose}
+          className="mt-4 block text-center font-sans text-[12px] text-white/55 hover:text-white"
+        >
+          How are you now? →
+        </Link>
       </div>
     </div>
   );

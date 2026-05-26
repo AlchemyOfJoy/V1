@@ -539,6 +539,13 @@ function JoyGlimpseCard({
   const [adding, setAdding] = useState(false);
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
+  // Save-sequence stages — the exact 2-second sequence from UI/UX
+  // Overhaul §6.3. null = no save in progress.
+  const [saved, setSaved] = useState<{
+    text: string;
+    count: number | null;
+    stage: 0 | 1 | 2 | 3;
+  } | null>(null);
   const router = useRouter();
   const { celebrate } = useCelebrate();
 
@@ -554,25 +561,99 @@ function JoyGlimpseCard({
         body: JSON.stringify({ content: text }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!data?.queued) {
-        if (data?.milestone) {
-          celebrate({
-            size: "milestone",
-            eyebrow: "List of Joy",
-            primary: data.milestone.label,
-            secondary: "Keep going.",
-          });
-        } else {
-          celebrate({ size: "micro", primary: "Added ✦" });
-        }
+      const milestoneCount =
+        data?.milestone && typeof data.milestone.count === "number"
+          ? (data.milestone.count as number)
+          : null;
+
+      // Milestone crossings get the Bloom celebration overlay (saved
+      // as Memory Stone). Normal adds use the 2-second §6.3 sequence
+      // inline. Either way, the queued path falls straight through.
+      if (data?.queued) {
+        setContent("");
+        setAdding(false);
+        setBusy(false);
+        setTimeout(onAdvance, 700);
+        return;
       }
-      router.refresh();
+      if (data?.milestone) {
+        celebrate({
+          size: "milestone",
+          eyebrow: "List of Joy",
+          primary: data.milestone.label,
+          secondary: "Keep going.",
+        });
+        router.refresh();
+        setContent("");
+        setAdding(false);
+        setBusy(false);
+        setTimeout(onAdvance, 800);
+        return;
+      }
+
+      // The 2-second save sequence (UI/UX Overhaul §6.3):
+      //   t=0     entry text fades in centered, cyan glow expands
+      //   t=600   "Now you have N things that bring you joy."
+      //   t=900   Triple Sparkle ✦ above
+      //   t=1100  haptic
+      //   t=1800  everything fades out
+      //   t=2000  return to card
       setContent("");
       setAdding(false);
-      setTimeout(onAdvance, 700);
+      setSaved({ text, count: milestoneCount, stage: 0 });
+      setTimeout(() => setSaved((s) => (s ? { ...s, stage: 1 } : s)), 300);
+      setTimeout(() => setSaved((s) => (s ? { ...s, stage: 2 } : s)), 600);
+      setTimeout(() => setSaved((s) => (s ? { ...s, stage: 3 } : s)), 900);
+      setTimeout(() => {
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate(20);
+          } catch {
+            // best effort
+          }
+        }
+      }, 1100);
+      setTimeout(() => {
+        router.refresh();
+        setSaved(null);
+        onAdvance();
+      }, 2000);
     } finally {
       setBusy(false);
     }
+  }
+
+  // Render the 2-second sequence overlay (replaces card content while
+  // the save sequence plays).
+  if (saved) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <p
+          className={`font-serif text-[28px] italic leading-snug text-navy transition-opacity duration-[300ms] ${
+            saved.stage >= 0 ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {saved.text}
+        </p>
+        <p
+          className={`mt-6 font-sans text-[14px] font-light text-slate transition-opacity duration-[300ms] ${
+            saved.stage >= 2 ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {saved.count !== null
+            ? `Now you have ${saved.count} things that bring you joy.`
+            : "On the list."}
+        </p>
+        <p
+          aria-hidden
+          className={`mt-6 font-serif text-[36px] text-gold transition-opacity duration-[300ms] ${
+            saved.stage >= 3 ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          ✦
+        </p>
+      </div>
+    );
   }
 
   return (
