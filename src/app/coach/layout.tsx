@@ -1,6 +1,6 @@
 import AppShell from "@/components/app/AppShell";
 
-export default function JosLayout({
+export default function CoachLayout({
   children,
 }: {
   children: React.ReactNode;

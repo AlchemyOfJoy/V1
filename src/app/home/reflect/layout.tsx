@@ -1,6 +1,6 @@
 import AppShell from "@/components/app/AppShell";
 
-export default function ToolsLayout({
+export default function ReflectLayout({
   children,
 }: {
   children: React.ReactNode;

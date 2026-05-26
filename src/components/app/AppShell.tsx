@@ -1,20 +1,15 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/SiteHeader";
-import BottomNav from "./BottomNav";
-import ResetBreathButton from "./ResetBreathButton";
 import OfflineSync from "./OfflineSync";
 
 /**
- * AppShell — per UI/UX Overhaul §0:
+ * AppShell — wraps every signed-in app surface (Synthesis Spec §7).
  *
- *   • Top SiteHeader (logo + sign out)
- *   • Main content
- *   • BottomNav: TODAY · THE BOOK · MY ALCHEMY (the ONLY navigation)
- *   • Floating ⚡ Reset Breath (tap = 60s, long-press = Right Now)
- *
- * No StuckPrompt, no Help button, no Switchboard, no FAB for List of
- * Joy. The directive's deletion checklist is enforced here.
+ * No tab bar. No floating buttons. No persistent chrome other than
+ * the top SiteHeader (which now carries the 💬 BrentBot icon top-
+ * right). Navigation is intentional: open the app → home (intention)
+ * → today's practice → BrentBot if needed → done.
  */
 export default async function AppShell({
   children,
@@ -26,11 +21,7 @@ export default async function AppShell({
   return (
     <>
       <SiteHeader user={user} />
-      <main className="min-h-[calc(100vh-4rem-4rem)] pb-[calc(72px+env(safe-area-inset-bottom))]">
-        {children}
-      </main>
-      <BottomNav />
-      <ResetBreathButton />
+      <main className="min-h-[calc(100vh-4rem)]">{children}</main>
       <OfflineSync />
     </>
   );

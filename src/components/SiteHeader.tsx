@@ -58,9 +58,32 @@ export default async function SiteHeader({ user }: { user: PublicUser | null }) 
             className="hidden h-[21px] w-auto sm:block"
           />
         </Link>
-        <nav className="flex items-center gap-4 sm:gap-6">
+        <nav className="flex items-center gap-3 sm:gap-5">
           {user ? (
             <>
+              {/* 💬 BrentBot — top-right of every signed-in screen
+                  (Synthesis Spec §4.1). Cyan-tinted circle so it reads
+                  as "support" not "decoration". */}
+              <Link
+                href="/coach"
+                aria-label="Talk to BrentBot"
+                className="group inline-flex h-9 w-9 items-center justify-center rounded-full border border-cyan/40 text-cyan transition hover:bg-cyan hover:text-white"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M4 5h16a1 1 0 011 1v10a1 1 0 01-1 1H8l-4 4V6a1 1 0 011-1z"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
               {(isCoach || admin) && (
                 <Link
                   href="/coach-portal"
