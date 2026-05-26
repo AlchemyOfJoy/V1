@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import { Pool as PgPool } from "pg";
+import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
 
 const CONNECTION =
   process.env.DATABASE_URL ||
@@ -8,22 +9,55 @@ const CONNECTION =
 
 const IS_LOCAL = /localhost|127\.0\.0\.1/.test(CONNECTION);
 
+/**
+ * Neon Postgres exposes a WebSocket endpoint that lets serverless
+ * functions skip the full TCP+TLS handshake on every cold start
+ * (~150-200ms savings) and pool connections at the edge. We detect
+ * Neon URLs by the hostname pattern and use @neondatabase/serverless
+ * when present; otherwise fall back to the standard pg driver (for
+ * local Postgres and any non-Neon host).
+ */
+const IS_NEON = /neon\.(tech|database\.com|build)|\.neon\.|neondb/i.test(
+  CONNECTION,
+);
+
+// In Node, the Neon driver uses Node's built-in undici fetch — no
+// websocket pipelining toggles required beyond defaults.
+if (IS_NEON) {
+  // Default pipelineConnect is "password"; this minimizes round-trips
+  // on first query (saves ~1 RTT per connection setup).
+  neonConfig.pipelineConnect = "password";
+}
+
+// Pool interface we expose. Both pg.Pool and Neon's Pool implement
+// .query() with the same signature, which is all we use.
+type SharedPool = {
+  query: <T>(text: string, params?: unknown[]) => Promise<{ rows: T[] }>;
+};
+
 const globalForDb = globalThis as unknown as {
-  __jqPool?: Pool;
+  __jqPool?: SharedPool;
   __jqSchema?: Promise<void>;
 };
 
-function pool(): Pool {
+function pool(): SharedPool {
   if (!globalForDb.__jqPool) {
-    globalForDb.__jqPool = new Pool({
-      connectionString: CONNECTION,
-      // Hosted Postgres (Neon, etc.) requires SSL; local Postgres does not.
-      ssl: IS_LOCAL ? undefined : { rejectUnauthorized: false },
-      max: 10,
-      idleTimeoutMillis: 30_000,
-      // Fast failure beats hanging the request for 30s+
-      connectionTimeoutMillis: 7_000,
-    });
+    if (IS_NEON) {
+      globalForDb.__jqPool = new NeonPool({
+        connectionString: CONNECTION,
+        max: 10,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 7_000,
+      }) as unknown as SharedPool;
+    } else {
+      globalForDb.__jqPool = new PgPool({
+        connectionString: CONNECTION,
+        ssl: IS_LOCAL ? undefined : { rejectUnauthorized: false },
+        max: 10,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 7_000,
+      }) as unknown as SharedPool;
+    }
   }
   return globalForDb.__jqPool;
 }
