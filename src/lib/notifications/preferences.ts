@@ -1,5 +1,11 @@
+import { randomBytes } from "crypto";
 import { query } from "../db";
 import type { NotificationKind } from "./copy";
+
+/** Cryptographically-random hex token for one-click unsubscribe links. */
+function newUnsubscribeToken(): string {
+  return randomBytes(16).toString("hex");
+}
 
 export interface NotificationPreferences {
   user_id: string;
@@ -50,12 +56,26 @@ export async function getOrCreatePreferences(
     `SELECT * FROM notification_preferences WHERE user_id = $1`,
     [userId],
   );
-  if (existing[0]) return existing[0];
+  if (existing[0]) {
+    // Backfill the unsubscribe token if a legacy row was created
+    // without one (rare — only matters for rows that pre-date this code).
+    if (!existing[0].unsubscribe_token) {
+      const token = newUnsubscribeToken();
+      await query(
+        `UPDATE notification_preferences SET unsubscribe_token = $2
+           WHERE user_id = $1 AND unsubscribe_token IS NULL`,
+        [userId, token],
+      );
+      existing[0].unsubscribe_token = token;
+    }
+    return existing[0];
+  }
   const created = await query<NotificationPreferences>(
-    `INSERT INTO notification_preferences (user_id) VALUES ($1)
+    `INSERT INTO notification_preferences (user_id, unsubscribe_token)
+       VALUES ($1, $2)
        ON CONFLICT (user_id) DO UPDATE SET updated_at = now()
        RETURNING *`,
-    [userId],
+    [userId, newUnsubscribeToken()],
   );
   return created[0] ?? { user_id: userId, ...DEFAULTS, unsubscribe_token: "" };
 }

@@ -4,6 +4,7 @@ import { getDayTask, isRestDay, phaseForDay } from "./challenge-days";
 import { getTodayPulse } from "./joy-pulse";
 import { listJoyItems } from "./list-of-joy";
 import { todayDrop } from "./daily-drop";
+import { getJosState, JOS_COMPONENTS } from "./jos";
 
 /**
  * Daily Session card resolution per the Cadence Directive §3 / §4 / §5.
@@ -28,6 +29,10 @@ export interface JoyDrop {
 export type CardKind =
   | "letter"
   | "missed_days"
+  | "jos_install_day"
+  | "jos_integration_day"
+  | "jos_complete"
+  | "path_choice"
   | "greeting"
   | "joy_pulse"
   | "morning_ritual"
@@ -165,7 +170,52 @@ export async function getDailySession(opts: {
   if (!pulse) cards.push({ kind: "joy_pulse" });
 
   // Card 3 — mode-aware "what to do today"
-  if (mode === "challenge" && !isGraduated && currentDay !== null) {
+  if (mode === "jos_install" || mode === "post_jos") {
+    const jos = await getJosState(opts.userId);
+    if (jos.ready_for_path_choice || jos.install_completed_at) {
+      // All 6 components done. The Ascension ceremony plays exactly
+      // once — the tutorial_flag 'jos_ceremony_seen' is stamped by
+      // JosCompleteCard's mount effect, so subsequent visits skip
+      // straight to the path-choice card.
+      const flagRows = await query<{ flags: Record<string, boolean> | null }>(
+        `SELECT tutorial_flags AS flags FROM users WHERE id = $1`,
+        [opts.userId],
+      );
+      const seenCeremony = flagRows[0]?.flags?.jos_ceremony_seen === true;
+      if (!seenCeremony) {
+        cards.push({
+          kind: "jos_complete",
+          payload: { components: JOS_COMPONENTS.map((c) => c.name) },
+        });
+      }
+      cards.push({
+        kind: "path_choice",
+        payload: { components: JOS_COMPONENTS.map((c) => c.name) },
+      });
+    } else if (jos.todays_component) {
+      cards.push({
+        kind: "jos_install_day",
+        payload: {
+          dayOffset: jos.current_install_day,
+          componentNumber: jos.todays_component.number,
+          eyebrow: jos.todays_component.eyebrow,
+          title: jos.todays_component.name,
+          description: jos.todays_component.description,
+          estimatedMin: jos.todays_component.estimatedMin,
+          href: jos.todays_component.primaryHref,
+          completedCount: jos.components_completed.length,
+        },
+      });
+    } else if (jos.is_integration_day) {
+      cards.push({
+        kind: "jos_integration_day",
+        payload: {
+          dayOffset: jos.current_install_day,
+          completedCount: jos.components_completed.length,
+        },
+      });
+    }
+  } else if (mode === "challenge" && !isGraduated && currentDay !== null) {
     if (isRestDay(currentDay)) {
       cards.push({
         kind: "rest_day",
@@ -180,13 +230,16 @@ export async function getDailySession(opts: {
         cards.push({
           kind: "whats_next",
           payload: {
-            eyebrow: `Day ${currentDay} · ${phaseForDay(currentDay)?.title ?? ""}`,
+            eyebrow:
+              task.eyebrowLabel ??
+              `Day ${currentDay} · ${phaseForDay(currentDay)?.title ?? ""}`,
             title: task.title,
             subtitle: task.description,
             href: task.primaryHref,
             primaryLabel: task.primaryLabel,
             estimatedMin: task.estimatedMin,
             isMilestone: task.isMilestone,
+            coachCard: task.coachCard ?? null,
           },
         });
       }
@@ -220,6 +273,10 @@ export async function getDailySession(opts: {
   });
 
   // Card 6 — Close. Copy varies by mode.
+  const closeTask =
+    mode === "challenge" && currentDay !== null && currentDay >= 1 && currentDay <= 90
+      ? getDayTask(currentDay)
+      : null;
   cards.push({
     kind: "close",
     payload: {
@@ -230,6 +287,12 @@ export async function getDailySession(opts: {
         mode === "challenge" && currentDay !== null && currentDay < 90
           ? currentDay + 1
           : null,
+      // Challenge-Mode extras: the day's closing line and a flag the
+      // UI uses to surface the "Mark Day N complete" CTA when the
+      // user hasn't yet logged today.
+      closingLine: closeTask?.closingLine ?? null,
+      todayLogged,
+      milestoneTier: closeTask?.milestoneTier ?? null,
     },
   });
 
@@ -282,8 +345,8 @@ async function practiceSuggestion(
     eyebrow: "Today",
     title: "Take a Spirit Walk",
     subtitle: "Twenty minutes outside, no headphones. Notice three things.",
-    href: "/curriculum/toolkit",
-    primaryLabel: "Browse the Tools",
+    href: "/book",
+    primaryLabel: "Open The Book",
     estimatedMin: 20,
   };
 }

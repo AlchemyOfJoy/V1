@@ -65,7 +65,7 @@ export default async function ExportPage() {
            FROM worksheet_responses WHERE user_id = $1`,
         [user.id],
       ),
-      listJoyItems(user.id),
+      listJoyItems(user.id, Number.POSITIVE_INFINITY),
       listSnapshots(user.id, 1),
       listForgivenessSubjects(user.id),
       query<{

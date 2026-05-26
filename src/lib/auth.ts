@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { randomBytes, randomUUID } from "crypto";
+import { cache } from "react";
 import bcrypt from "bcryptjs";
 import { query, UserRow } from "./db";
 
@@ -12,12 +13,21 @@ export interface PublicUser {
   name: string | null;
 }
 
-export function hashPassword(password: string): string {
-  return bcrypt.hashSync(password, 10);
+/**
+ * Async bcrypt so the ~100ms hash work doesn't block the event loop
+ * during login. The hash itself doesn't get faster — but the function
+ * yields, so co-tenant requests on the same serverless instance can
+ * proceed in parallel.
+ */
+export function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }
 
-export function verifyPassword(password: string, hash: string): boolean {
-  return bcrypt.compareSync(password, hash);
+export function verifyPassword(
+  password: string,
+  hash: string,
+): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }
 
 export async function createUser(opts: {
@@ -114,27 +124,39 @@ export async function clearSession(): Promise<void> {
   store.delete(SESSION_COOKIE);
 }
 
-export async function getCurrentUser(): Promise<PublicUser | null> {
-  const store = await cookies();
-  const token = store.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+/**
+ * Resolve the signed-in user in ONE database round-trip via a JOIN on
+ * sessions × users. Wrapped in React `cache` so multiple calls within
+ * the same render share a single query.
+ */
+export const getCurrentUser = cache(
+  async (): Promise<PublicUser | null> => {
+    const store = await cookies();
+    const token = store.get(SESSION_COOKIE)?.value;
+    if (!token) return null;
 
-  try {
-    const sessions = await query<{ user_id: string }>(
-      "SELECT user_id FROM sessions WHERE token = $1 AND expires_at > now()",
-      [token],
-    );
-    if (!sessions[0]) return null;
-
-    const user = await getUserById(sessions[0].user_id);
-    if (!user) return null;
-    return { id: user.id, email: user.email, name: user.name };
-  } catch (err) {
-    // A database hiccup should degrade to "logged out", not crash the page.
-    console.error("[auth] getCurrentUser failed:", (err as Error).message);
-    return null;
-  }
-}
+    try {
+      const rows = await query<{
+        id: string;
+        email: string;
+        name: string | null;
+      }>(
+        `SELECT u.id, u.email, u.name
+           FROM sessions s
+           JOIN users u ON u.id = s.user_id
+          WHERE s.token = $1 AND s.expires_at > now()
+          LIMIT 1`,
+        [token],
+      );
+      const row = rows[0];
+      if (!row) return null;
+      return { id: row.id, email: row.email, name: row.name };
+    } catch (err) {
+      console.error("[auth] getCurrentUser failed:", (err as Error).message);
+      return null;
+    }
+  },
+);
 
 export function isGoogleEnabled(): boolean {
   return Boolean(

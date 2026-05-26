@@ -60,10 +60,10 @@ export default async function MyJoyLibraryPage() {
             Tap the heart on any quote to keep it here.
           </p>
           <Link
-            href="/library"
-            className="mt-5 inline-block rounded-full bg-cyan-deep px-5 py-2 font-sans text-[13px] font-semibold text-white hover:bg-[#006a8c]"
+            href="/book"
+            className="mt-5 inline-block rounded-full bg-cyan px-5 py-2 font-sans text-[13px] font-semibold text-white hover:bg-navy"
           >
-            Browse the Library →
+            Open The Book →
           </Link>
         </div>
       ) : (

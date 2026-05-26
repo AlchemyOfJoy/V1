@@ -60,7 +60,12 @@ export async function POST(req: NextRequest) {
         [user.id, id],
       );
       const count = Number(rows[0]?.c ?? 0);
-      if (count === 1) await awardBadge(user.id, "jq_baseline");
+      if (count === 1) {
+        await awardBadge(user.id, "jq_baseline");
+        // First-ever JQ score = JOS Component 01 installed.
+        const { markComponentInstalled } = await import("@/lib/jos");
+        await markComponentInstalled(user.id, "jq_baseline");
+      }
       const prevMax = rows[0]?.max_score;
       if (prevMax !== null && prevMax !== undefined && score > prevMax) {
         await awardBadge(user.id, "jq_rise");

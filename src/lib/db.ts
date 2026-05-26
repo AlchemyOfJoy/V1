@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import { Pool as PgPool } from "pg";
+import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
 
 const CONNECTION =
   process.env.DATABASE_URL ||
@@ -8,22 +9,68 @@ const CONNECTION =
 
 const IS_LOCAL = /localhost|127\.0\.0\.1/.test(CONNECTION);
 
+/**
+ * Neon Postgres exposes a WebSocket endpoint that lets serverless
+ * functions skip the full TCP+TLS handshake on every cold start
+ * (~150-200ms savings) and pool connections at the edge. We detect
+ * Neon URLs by the hostname pattern and use @neondatabase/serverless
+ * when present; otherwise fall back to the standard pg driver (for
+ * local Postgres and any non-Neon host).
+ */
+const IS_NEON = /neon\.(tech|database\.com|build)|\.neon\.|neondb/i.test(
+  CONNECTION,
+);
+
+// In Node, the Neon driver uses Node's built-in undici fetch — no
+// websocket pipelining toggles required beyond defaults.
+if (IS_NEON) {
+  // Default pipelineConnect is "password"; this minimizes round-trips
+  // on first query (saves ~1 RTT per connection setup).
+  neonConfig.pipelineConnect = "password";
+}
+
+// Pool interface we expose. Both pg.Pool and Neon's Pool implement
+// .query() with the same signature, which is all we use.
+type SharedPool = {
+  query: <T>(text: string, params?: unknown[]) => Promise<{ rows: T[] }>;
+};
+
 const globalForDb = globalThis as unknown as {
-  __jqPool?: Pool;
+  __jqPool?: SharedPool;
   __jqSchema?: Promise<void>;
 };
 
-function pool(): Pool {
+function pool(): SharedPool {
   if (!globalForDb.__jqPool) {
-    globalForDb.__jqPool = new Pool({
-      connectionString: CONNECTION,
-      // Hosted Postgres (Neon, etc.) requires SSL; local Postgres does not.
-      ssl: IS_LOCAL ? undefined : { rejectUnauthorized: false },
-      max: 3,
-    });
+    if (IS_NEON) {
+      globalForDb.__jqPool = new NeonPool({
+        connectionString: CONNECTION,
+        max: 10,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 7_000,
+      }) as unknown as SharedPool;
+    } else {
+      globalForDb.__jqPool = new PgPool({
+        connectionString: CONNECTION,
+        ssl: IS_LOCAL ? undefined : { rejectUnauthorized: false },
+        max: 10,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 7_000,
+      }) as unknown as SharedPool;
+    }
   }
   return globalForDb.__jqPool;
 }
+
+/**
+ * Bump this whenever you add a new statement to SCHEMA below. The fast
+ * path checks this against the value stored in the schema_version table;
+ * if they match, the 80+ DDL statements are skipped entirely.
+ *
+ * On a fresh database, the value is missing and migrations run as normal,
+ * then the table is seeded with the current version.
+ */
+const SCHEMA_VERSION = 8;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -493,6 +540,77 @@ const SCHEMA = [
   // Challenge Cadence Directive — three user states + completion-based day count
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_mode TEXT NOT NULL DEFAULT 'challenge'`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_completed_at TIMESTAMPTZ`,
+  // JOS-First Architecture Directive — JOS install lifecycle
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_install_started_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_install_completed_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_components_completed JSONB NOT NULL DEFAULT '[]'::jsonb`,
+  // Accelerated pacing tracking — Challenge Content Directive §5
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS accelerated_warning_shown BOOLEAN NOT NULL DEFAULT false`,
+  // Daily intentions + evening reflections — Synthesis Spec §3
+  `CREATE TABLE IF NOT EXISTS daily_intentions (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     for_date DATE NOT NULL,
+     prompt TEXT NOT NULL,
+     intention TEXT NOT NULL,
+     evening_reflection TEXT,
+     evening_pulse INT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     evening_at TIMESTAMPTZ,
+     UNIQUE (user_id, for_date)
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_daily_intentions_user
+     ON daily_intentions(user_id, for_date DESC)`,
+  // Forgot-password reset tokens — hashed, single-use, time-bound
+  `CREATE TABLE IF NOT EXISTS password_resets (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     token_hash TEXT NOT NULL UNIQUE,
+     expires_at TIMESTAMPTZ NOT NULL,
+     used_at TIMESTAMPTZ,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_password_resets_user
+     ON password_resets(user_id, created_at DESC)`,
+  // Practice version history — the Master Prompt §11 commitment that
+  // every Practice is "editable forever" with version tracking. One
+  // row per snapshot; coalesced server-side so autosave doesn't spam.
+  `CREATE TABLE IF NOT EXISTS worksheet_response_versions (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     worksheet_id TEXT NOT NULL,
+     data JSONB NOT NULL,
+     content_hash TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_worksheet_versions_lookup
+     ON worksheet_response_versions(user_id, worksheet_id, created_at DESC)`,
+  // Memory Stones — replayable celebration tiles (Master Prompt §13).
+  // Saved every time a Bloom or Ascension celebration fires; displayed
+  // as the horizontal scrolling row in My Alchemy → The Memories.
+  `CREATE TABLE IF NOT EXISTS memory_stones (
+     id BIGSERIAL PRIMARY KEY,
+     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     tier TEXT NOT NULL,
+     eyebrow TEXT,
+     headline TEXT NOT NULL,
+     subline TEXT,
+     context JSONB NOT NULL DEFAULT '{}'::jsonb,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_memory_stones_user
+     ON memory_stones(user_id, created_at DESC)`,
+  // Indexes added for the JOS / Me / Wins hot paths — these tables
+  // are queried by (user_id, recency) on every render of those pages.
+  `CREATE INDEX IF NOT EXISTS idx_forgiveness_subjects_user
+     ON forgiveness_subjects(user_id, completed_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_priority_pillar_snapshots_user
+     ON priority_pillar_snapshots(user_id, taken_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_subscripts_user
+     ON subscripts(user_id, version DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_sessions_expires
+     ON sessions(expires_at)`,
   // --- Notifications: per-user channel prefs + idempotent delivery log ---
   `CREATE TABLE IF NOT EXISTS notification_preferences (
      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -511,7 +629,7 @@ const SCHEMA = [
      letter_delivered BOOLEAN NOT NULL DEFAULT true,
      gone_dark BOOLEAN NOT NULL DEFAULT true,
      milestone BOOLEAN NOT NULL DEFAULT true,
-     unsubscribe_token TEXT NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex'),
+     unsubscribe_token TEXT,
      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
   `CREATE TABLE IF NOT EXISTS notification_deliveries (
@@ -530,14 +648,53 @@ const SCHEMA = [
 ];
 
 /** Create tables on first use — idempotent, runs once per process.
- *  Each statement runs separately so it works through any connection pooler.
+ *
+ *  Fast path: a single SELECT from schema_version tells us if migrations
+ *  are already up to date for this DB. If yes, the 80+ DDL statements
+ *  are skipped — turning a cold start from ~80 round-trips to 1.
+ *
+ *  Slow path: on a fresh DB (or after a schema bump), the loop runs,
+ *  then schema_version is upserted with SCHEMA_VERSION so future cold
+ *  starts skip.
+ *
  *  A failed run is not cached, so the next request retries. */
 function ensureSchema(): Promise<void> {
   if (!globalForDb.__jqSchema) {
     globalForDb.__jqSchema = (async () => {
-      for (const stmt of SCHEMA) {
-        await pool().query(stmt);
+      const p = pool();
+      // Fast path — has the schema_version table been created and
+      // populated with our target version? If so, skip the loop.
+      try {
+        const r = await p.query<{ version: number }>(
+          `SELECT version FROM schema_version WHERE id = true LIMIT 1`,
+        );
+        if (r.rows[0]?.version >= SCHEMA_VERSION) return;
+        // If the table exists in the legacy multi-row shape, fall
+        // through to recreate the sentinel row.
+      } catch {
+        // Table doesn't exist yet — fall through to migrations.
       }
+      // Slow path — run every statement, then stamp the version. The
+      // schema_version table is a single-row sentinel so upserts can
+      // actually update the recorded version. Drop any prior table
+      // (which used PK-on-version and silently failed to update on
+      // bumps, forcing migrations to re-run on every cold start) and
+      // recreate fresh.
+      for (const stmt of SCHEMA) {
+        await p.query(stmt);
+      }
+      await p.query(`DROP TABLE IF EXISTS schema_version`);
+      await p.query(
+        `CREATE TABLE schema_version (
+           id BOOLEAN PRIMARY KEY DEFAULT true CHECK (id = true),
+           version INT NOT NULL
+         )`,
+      );
+      await p.query(
+        `INSERT INTO schema_version (id, version) VALUES (true, $1)
+           ON CONFLICT (id) DO UPDATE SET version = EXCLUDED.version`,
+        [SCHEMA_VERSION],
+      );
     })().catch((err) => {
       globalForDb.__jqSchema = undefined;
       throw err;

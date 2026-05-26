@@ -111,9 +111,19 @@ export default function AuthForm({
           />
         </div>
         <div>
-          <label htmlFor="password" className={label}>
-            Password
-          </label>
+          <div className="mb-2 flex items-baseline justify-between">
+            <label htmlFor="password" className={`${label} mb-0`}>
+              Password
+            </label>
+            {!isSignup && (
+              <Link
+                href="/forgot-password"
+                className="font-sans text-[12px] text-navy/55 hover:text-cyan-deep"
+              >
+                Forgot?
+              </Link>
+            )}
+          </div>
           <input
             id="password"
             type="password"

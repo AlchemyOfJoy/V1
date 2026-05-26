@@ -1,18 +1,9 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import SiteHeader from "@/components/SiteHeader";
+import AppShell from "@/components/app/AppShell";
 
-export default async function CoachLayout({
+export default function CoachLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-  return (
-    <>
-      <SiteHeader user={user} />
-      {children}
-    </>
-  );
+  return <AppShell>{children}</AppShell>;
 }

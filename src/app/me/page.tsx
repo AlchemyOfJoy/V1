@@ -3,258 +3,369 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { getChallengeStatus } from "@/lib/challenge";
-import { BADGE_BY_ID, listEarned } from "@/lib/badges";
+import { listEarned } from "@/lib/badges";
+import { listMemoryStones } from "@/lib/memory-stones";
 import { recentPulses } from "@/lib/joy-pulse";
-import { loopCount } from "@/lib/itt-loops";
 
 export const metadata: Metadata = {
-  title: "Me",
+  title: "My Alchemy",
   robots: { index: false },
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function MePage() {
+/**
+ * MY ALCHEMY — the user's personal record (Master Prompt §16).
+ *
+ * Editorial trophy room. Pure white canvas, large numerals, slate-rule
+ * dividers, sharp corners. The Proof / The Documents / The Memories /
+ * The Future — four sections, ample whitespace, no shadows.
+ */
+export default async function MyAlchemyPage() {
   const user = (await getCurrentUser())!;
-  const [joyCountRows, forgivenessRows, challenge, badges, pulses, loops, assessRows] =
-    await Promise.all([
-      query<{ c: string }>(
-        `SELECT COUNT(*)::text AS c FROM list_of_joy_items WHERE user_id = $1`,
-        [user.id],
-      ),
-      query<{ c: string }>(
-        `SELECT COUNT(*)::text AS c FROM forgiveness_subjects
-           WHERE user_id = $1 AND completed_at IS NOT NULL`,
-        [user.id],
-      ),
-      getChallengeStatus(user.id),
-      listEarned(user.id),
-      recentPulses(user.id, 7),
-      loopCount(user.id),
-      query<{ score: number; created_at: string | Date }>(
-        `SELECT score, created_at FROM assessments
-           WHERE user_id = $1 ORDER BY created_at DESC LIMIT 12`,
-        [user.id],
-      ),
-    ]);
 
+  const [
+    joyCountRows,
+    forgivenessCountRows,
+    challenge,
+    badges,
+    pulses,
+    assessRows,
+    resetCountRows,
+    lettersRows,
+    memoryStones,
+  ] = await Promise.all([
+    query<{ c: string }>(
+      `SELECT COUNT(*)::text AS c FROM list_of_joy_items WHERE user_id = $1`,
+      [user.id],
+    ),
+    query<{ c: string }>(
+      `SELECT COUNT(*)::text AS c FROM forgiveness_subjects
+         WHERE user_id = $1 AND completed_at IS NOT NULL`,
+      [user.id],
+    ),
+    getChallengeStatus(user.id),
+    listEarned(user.id),
+    recentPulses(user.id, 30),
+    query<{ score: number; created_at: string | Date }>(
+      `SELECT score, created_at FROM assessments
+         WHERE user_id = $1 ORDER BY created_at ASC`,
+      [user.id],
+    ),
+    query<{ c: string }>(
+      `SELECT COUNT(*)::text AS c FROM joy_pulse WHERE user_id = $1`,
+      [user.id],
+    ),
+    query<{
+      arrived: string;
+      pending: string;
+    }>(
+      `SELECT
+         COUNT(*) FILTER (WHERE sent_at IS NOT NULL)::text AS arrived,
+         COUNT(*) FILTER (WHERE sent_at IS NULL)::text AS pending
+       FROM letters_to_self WHERE user_id = $1`,
+      [user.id],
+    ),
+    listMemoryStones(user.id, 24),
+  ]);
+
+  const firstName = user.name?.split(" ")[0] ?? user.email.split("@")[0];
   const joyCount = Number(joyCountRows[0]?.c ?? 0);
-  const forgivenessCount = Number(forgivenessRows[0]?.c ?? 0);
-  const latestJq = assessRows[0]?.score ?? null;
-  const baselineJq =
-    assessRows.length > 0
-      ? assessRows[assessRows.length - 1].score
-      : null;
-  const jqDelta =
-    latestJq !== null && baselineJq !== null && assessRows.length > 1
-      ? latestJq - baselineJq
-      : null;
-  const avgMood =
-    pulses.length === 0
-      ? null
-      : Math.round(
-          (pulses.reduce((s, p) => s + p.score, 0) / pulses.length) * 10,
-        ) / 10;
-
-  const heroStats: { label: string; value: string | number }[] = [
-    { label: "List of Joy", value: joyCount },
-    { label: "Days in", value: challenge.started_at ? challenge.current_day : 0 },
-    {
-      label: "Avg Pulse",
-      value: avgMood !== null ? `${avgMood}/10` : "—",
-    },
-  ];
+  const forgivenessCount = Number(forgivenessCountRows[0]?.c ?? 0);
+  const resetCount = Number(resetCountRows[0]?.c ?? 0);
+  const daysIn = challenge.started_at ? challenge.current_day : 0;
+  const baselineJq = assessRows[0]?.score ?? null;
+  const latestJq =
+    assessRows.length > 0 ? assessRows[assessRows.length - 1].score : null;
+  const lettersPending = Number(lettersRows[0]?.pending ?? 0);
+  const daysUntil90 =
+    challenge.current_day > 0 && challenge.current_day <= 90
+      ? Math.max(0, 90 - challenge.current_day + 1)
+      : 0;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 px-5 pb-12 pt-6 sm:pt-10">
-      <header>
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
-          Me
-        </p>
-        <h1 className="mt-2 font-serif text-[32px] font-medium leading-tight tracking-tight text-navy sm:text-[40px]">
-          The proof of the <em className="text-cyan-deep">journey</em>
-        </h1>
-      </header>
+    <main className="mx-auto max-w-3xl px-6 pb-16 pt-10 sm:pt-14">
+      <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan">
+        Your Personal Record
+      </p>
+      <h1 className="mt-4 font-serif text-[44px] font-medium leading-[1.1] tracking-tight text-navy sm:text-[56px]">
+        Your <em className="text-cyan">Alchemy</em>.
+      </h1>
+      <p className="mt-3 font-sans text-[16px] font-light text-slate">
+        {firstName} · {daysIn > 0 ? `Day ${daysIn}` : "Day 1 begins"}
+      </p>
 
-      {/* JQ hero — the headline number */}
-      <section className="relative overflow-hidden rounded-3xl border border-navy/10 bg-gradient-to-br from-navy to-[#001f2a] p-6 text-white sm:p-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-cyan-deep/40 blur-2xl"
-        />
-        <p className="relative font-sans text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan/80">
-          Joy Quotient
-        </p>
-        {latestJq === null ? (
-          <div className="relative mt-3">
-            <p className="font-serif text-[28px] font-medium">No baseline yet</p>
-            <Link
-              href="/assessment"
-              className="mt-3 inline-block font-sans text-[13px] font-semibold text-cyan hover:underline"
-            >
-              Take your first JQ →
-            </Link>
-          </div>
-        ) : (
-          <div className="relative mt-3 flex items-end justify-between gap-4">
-            <div>
-              <p className="font-serif text-[64px] font-medium leading-none tabular-nums">
-                {latestJq}
-                <span className="ml-2 font-sans text-[14px] font-light text-white/55">
-                  / 100
-                </span>
-              </p>
-              {jqDelta !== null && (
-                <p
-                  className={`mt-1 font-sans text-[12px] font-semibold ${
-                    jqDelta > 0
-                      ? "text-cyan"
-                      : jqDelta < 0
-                        ? "text-gold"
-                        : "text-white/55"
-                  }`}
-                >
-                  {jqDelta > 0 ? "▲" : jqDelta < 0 ? "▼" : "—"}{" "}
-                  {Math.abs(jqDelta)} from baseline
-                </p>
-              )}
-            </div>
-            <Link
-              href="/dashboard"
-              className="font-sans text-[12px] font-semibold text-cyan hover:underline"
-            >
-              History →
-            </Link>
-          </div>
-        )}
-      </section>
+      <div aria-hidden className="my-10 h-px w-16 bg-slate/30" />
 
-      {/* Three hero stats */}
-      <section className="grid grid-cols-3 gap-3">
-        {heroStats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-navy/10 bg-white p-4 text-center"
-          >
-            <p className="font-serif text-[28px] font-medium tabular-nums text-navy">
-              {s.value}
-            </p>
-            <p className="mt-0.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-navy/45">
-              {s.label}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      {/* Secondary counters — quieter */}
-      <section className="grid grid-cols-3 gap-3 font-sans text-[12px] text-navy/55">
-        <p>
-          <span className="block font-serif text-[20px] font-medium text-navy">
-            {loops}
-          </span>
-          ITT loops
-        </p>
-        <p>
-          <span className="block font-serif text-[20px] font-medium text-navy">
-            {forgivenessCount}
-          </span>
-          forgivenesses
-        </p>
-        <p>
-          <span className="block font-serif text-[20px] font-medium text-navy">
-            {badges.length}
-          </span>
-          badges
-        </p>
-      </section>
-
-      {/* Badges */}
+      {/* ─── THE PROOF ──────────────────────────────────────── */}
       <section>
-        <h2 className="font-serif text-[20px] font-medium tracking-tight text-navy">
-          Badges
-        </h2>
-        {badges.length === 0 ? (
-          <p className="mt-3 rounded-2xl border border-dashed border-navy/15 bg-white p-6 text-center font-sans text-[13px] font-light text-navy/55">
-            Take an action — your first will land here.
-          </p>
-        ) : (
-          <ul className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-5">
-            {badges.map((b) => {
-              const def = BADGE_BY_ID.get(b.badge_id);
-              if (!def) return null;
-              return (
-                <li
-                  key={b.badge_id}
-                  className="flex flex-col items-center rounded-2xl border border-gold/30 bg-[#FAF6EC] p-3 text-center"
-                  title={def.description}
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          The Proof
+        </p>
+        <ul className="mt-5 space-y-3 font-serif text-[20px] leading-relaxed text-navy">
+          <li>
+            You&apos;ve shown up{" "}
+            <span className="font-medium tabular-nums text-cyan">{daysIn}</span>{" "}
+            times.
+          </li>
+          <li>
+            You&apos;ve added{" "}
+            <span className="font-medium tabular-nums text-cyan">
+              {joyCount}
+            </span>{" "}
+            things to your Joy.
+          </li>
+          <li>
+            You&apos;ve forgiven{" "}
+            <span className="font-medium tabular-nums text-cyan">
+              {forgivenessCount}
+            </span>{" "}
+            {forgivenessCount === 1 ? "person" : "people"}.
+          </li>
+          <li>
+            You&apos;ve logged{" "}
+            <span className="font-medium tabular-nums text-cyan">
+              {pulses.length}
+            </span>{" "}
+            Joy Pulses in the last 30 days.
+          </li>
+          {baselineJq !== null && latestJq !== null && assessRows.length > 1 && (
+            <li>
+              Your JQ went from{" "}
+              <span className="font-medium tabular-nums text-slate">
+                {baselineJq}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium tabular-nums text-cyan">
+                {latestJq}
+              </span>
+              .
+            </li>
+          )}
+        </ul>
+        <Link
+          href="/me/wins"
+          className="mt-6 inline-block font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan hover:text-navy"
+        >
+          → See everything
+        </Link>
+      </section>
+
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      {/* ─── THE DOCUMENTS ──────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          The Documents
+        </p>
+        <ul className="mt-5 divide-y divide-slate/15">
+          {[
+            {
+              glyph: "✦",
+              label: "My Core Narrative",
+              action: "Edit",
+              href: "/curriculum/module/02-joyful-operating-system/core-narrative",
+            },
+            {
+              glyph: "⚱",
+              label: "My Self Eulogy",
+              action: "Read",
+              href: "/curriculum/module/02-joyful-operating-system/self-eulogy",
+            },
+            {
+              glyph: "✦",
+              label: `My List of Joy (${joyCount})`,
+              action: "Browse",
+              href: "/me/my-joy",
+            },
+            {
+              glyph: "01",
+              label: "My Priority Pillars",
+              action: "Score",
+              href: "/curriculum/module/02-joyful-operating-system/priority-pillars",
+            },
+            {
+              glyph: "▶",
+              label: "My SubScript",
+              action: "Read",
+              href: "/curriculum/module/02-joyful-operating-system/subscript",
+            },
+            {
+              glyph: "✦",
+              label: "My Forgiveness Vault",
+              action: "Enter",
+              href: "/curriculum/module/03-forgiveness",
+            },
+          ].map((doc) => (
+            <li key={doc.label}>
+              <Link
+                href={doc.href}
+                className="flex items-center gap-5 py-4 transition-colors duration-150 hover:text-cyan"
+              >
+                <span
+                  aria-hidden
+                  className="w-6 font-serif text-[18px] text-slate group-hover:text-cyan"
                 >
-                  <span aria-hidden className="text-[24px] leading-none text-gold">
-                    {def.icon}
-                  </span>
-                  <p className="mt-1.5 font-serif text-[11px] leading-tight text-navy">
-                    {def.title}
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  {doc.glyph}
+                </span>
+                <span className="flex-1 font-serif text-[18px] text-navy">
+                  {doc.label}
+                </span>
+                <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan">
+                  {doc.action}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
-      {/* Show me my wins — primary lifeline link */}
-      <Link
-        href="/me/wins"
-        className="group flex items-center justify-between gap-4 rounded-3xl border border-[#C89A3F]/40 bg-gradient-to-br from-[#FAF6EC] to-white px-6 py-5 transition hover:border-[#C89A3F]/70"
-      >
-        <div>
-          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a6d00]">
-            On a hard day
-          </p>
-          <p className="mt-1 font-serif text-[22px] font-medium text-navy">
-            Show me my <em className="text-cyan-deep">wins</em>
-          </p>
-        </div>
-        <span aria-hidden className="text-[28px] text-[#C89A3F] transition group-hover:translate-x-1">
-          →
-        </span>
-      </Link>
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
 
-      {/* Shortcuts — compact tile row */}
-      <section className="grid gap-2 sm:grid-cols-2">
-        {[
-          { href: "/coach", label: "Your Coach", icon: "✦", accent: true },
-          { href: "/courses", label: "Courses", icon: "▢" },
-          { href: "/me/letters", label: "Letters", icon: "✉" },
-          { href: "/me/my-joy", label: "My Joy Library", icon: "♥" },
-          { href: "/3am", label: "For hard hours", icon: "☾" },
-          { href: "/me/notifications", label: "Notifications", icon: "◈" },
-          { href: "/curriculum/journal", label: "Journal", icon: "❋" },
-          { href: "/curriculum/export", label: "Export", icon: "↓" },
-          { href: "/account", label: "Settings", icon: "○" },
-        ].map((s) => (
-          <Link
-            key={s.href}
-            href={s.href}
-            className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition ${
-              s.accent
-                ? "border-cyan-deep/30 bg-mist hover:border-cyan-deep/60"
-                : "border-navy/12 bg-white hover:border-cyan-deep/30"
-            }`}
-          >
-            <span
-              aria-hidden
-              className={`text-[18px] ${
-                s.accent ? "text-cyan-deep" : "text-navy/45"
-              }`}
+      {/* ─── THE MEMORIES (Memory Stones — Master Prompt §13) ── */}
+      {(memoryStones.length > 0 || badges.length > 0) && (
+        <>
+          <section>
+            <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+              The Memories
+            </p>
+            <p className="mt-3 font-serif text-[15px] italic leading-relaxed text-slate">
+              {memoryStones.length > 0
+                ? "Tap any stone to re-experience that moment."
+                : "Earn your first Memory Stone by completing a Practice or a Day."}
+            </p>
+            <div className="mt-5 flex gap-3 overflow-x-auto pb-2">
+              {memoryStones.map((s) => {
+                const date = new Date(s.created_at as unknown as string);
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/me/memory-stones/${s.id}`}
+                    className={`group flex h-32 w-32 shrink-0 flex-col items-center justify-between border bg-white p-3 text-center transition hover:border-cyan ${
+                      s.tier === "ascension"
+                        ? "border-gold/50"
+                        : "border-slate/20"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`text-[24px] ${
+                        s.tier === "ascension" ? "text-gold" : "text-cyan"
+                      }`}
+                    >
+                      ✦
+                    </span>
+                    <p className="font-serif text-[12px] italic leading-tight text-navy line-clamp-3">
+                      {s.headline}
+                    </p>
+                    <p className="font-sans text-[10px] uppercase tracking-[0.12em] text-slate">
+                      {date.toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </Link>
+                );
+              })}
+              {/* Legacy badges shown alongside until they're migrated. */}
+              {memoryStones.length === 0 &&
+                badges.slice(0, 12).map((b) => (
+                  <div
+                    key={b.badge_id}
+                    className="flex h-24 w-24 shrink-0 flex-col items-center justify-center border border-slate/20 bg-white p-3 text-center"
+                  >
+                    <span aria-hidden className="text-[22px] text-gold">
+                      ✦
+                    </span>
+                    <p className="mt-1 font-sans text-[10px] uppercase tracking-[0.12em] text-slate">
+                      {new Date(b.earned_at as unknown as string).toLocaleDateString(
+                        undefined,
+                        { month: "short", day: "numeric" },
+                      )}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          </section>
+          <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+        </>
+      )}
+
+      {/* ─── THE FUTURE ─────────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          The Future
+        </p>
+        <ul className="mt-5 space-y-3 font-serif text-[18px] leading-relaxed text-navy">
+          <li>
+            <Link
+              href="/me/letters"
+              className="flex items-center gap-3 hover:text-cyan"
             >
-              {s.icon}
+              <span aria-hidden className="text-slate">
+                ✉
+              </span>
+              <span>
+                Letters from past you
+                {lettersPending > 0 && (
+                  <span className="font-sans text-[13px] text-slate">
+                    {" "}
+                    ({lettersPending} pending)
+                  </span>
+                )}
+              </span>
+            </Link>
+          </li>
+          <li className="flex items-center gap-3">
+            <span aria-hidden className="text-slate">
+              ◯
             </span>
-            <span className="font-serif text-[15px] font-medium text-navy">
-              {s.label}
+            <span>
+              {daysIn > 0
+                ? `Currently on Day ${daysIn} of Challenge`
+                : "Day 1 begins tomorrow"}
             </span>
-          </Link>
-        ))}
+          </li>
+          {daysUntil90 > 0 && (
+            <li className="flex items-center gap-3">
+              <span aria-hidden className="text-gold">
+                ✦
+              </span>
+              <span>
+                Day 90 in{" "}
+                <span className="font-medium tabular-nums">{daysUntil90}</span>{" "}
+                {daysUntil90 === 1 ? "day" : "days"}
+              </span>
+            </li>
+          )}
+        </ul>
       </section>
-    </div>
+
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      {/* ─── SETTINGS (the only secondary nav per UI/UX §0) ── */}
+      <nav aria-label="Settings">
+        <ul className="grid grid-cols-2 gap-y-3 font-sans text-[13px] text-slate sm:grid-cols-3">
+          <li>
+            <Link href="/me/notifications" className="hover:text-cyan">
+              Notifications →
+            </Link>
+          </li>
+          <li>
+            <Link href="/account" className="hover:text-cyan">
+              Settings →
+            </Link>
+          </li>
+        </ul>
+        <p aria-hidden className="mt-10 text-center text-[20px] text-gold">
+          ✦
+        </p>
+        <p className="mt-2 text-center font-sans text-[11px] uppercase tracking-[0.26em] text-slate/55">
+          Return to yourself.
+        </p>
+      </nav>
+
+      <p className="sr-only">{resetCount} Reset Breaths logged in your time.</p>
+    </main>
   );
 }

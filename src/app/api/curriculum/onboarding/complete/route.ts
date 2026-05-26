@@ -1,20 +1,33 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { startChallenge } from "@/lib/challenge";
+import { setChallengeMode } from "@/lib/challenge";
+import { beginJosInstall } from "@/lib/jos";
 
 /**
- * Onboarding completion → auto-start the 90-Day Challenge.
+ * Onboarding completion (JOS-First Architecture §3, §13).
  *
- * Every user from this point forward is on Day 1 of the structured
- * 90-day arc. The challenge is the spine of how the app is used; no
- * more separate "Begin Day 1" opt-in.
+ * After Day 0 onboarding, every new user enters the JOS install phase.
+ * The "door" the user picked during onboarding is recorded as a hint
+ * for later — but the path choice (Challenge vs Practice) happens AFTER
+ * the install completes, not before. There are no skips per §16.
+ *
+ * The "explore" door no longer routes to Free Mode at onboarding —
+ * those users still install the JOS; they just may pick Practice Mode
+ * (Path B) at the post-JOS choice instead of the Challenge.
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
+
+  try {
+    await req.json();
+  } catch {
+    // body is optional now — the door is informational
+  }
+
   try {
     await query(
       `UPDATE users
@@ -22,8 +35,9 @@ export async function POST() {
        WHERE id = $1`,
       [user.id],
     );
-    await startChallenge(user.id);
-    return NextResponse.json({ ok: true });
+    await setChallengeMode(user.id, "jos_install");
+    await beginJosInstall(user.id);
+    return NextResponse.json({ ok: true, mode: "jos_install" });
   } catch (err) {
     console.error("[onboarding] complete failed:", err);
     return NextResponse.json(

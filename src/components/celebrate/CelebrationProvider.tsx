@@ -40,6 +40,21 @@ export default function CelebrationProvider({
 
   const celebrate = useCallback((next: CelebratePayload) => {
     setPayload(next);
+    // Milestone (Bloom tier) and major (Ascension tier) celebrations
+    // persist to Memory Stones — replayable in My Alchemy. Spark and
+    // Glow are transient acknowledgments, not saved.
+    if (next.size === "milestone" || next.size === "major") {
+      fetch("/api/me/memory-stones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tier: next.size === "major" ? "ascension" : "bloom",
+          eyebrow: next.eyebrow ?? null,
+          headline: next.primary,
+          subline: next.secondary ?? null,
+        }),
+      }).catch(() => {});
+    }
   }, []);
 
   const value = useMemo(() => ({ celebrate }), [celebrate]);
