@@ -1,4 +1,9 @@
-// Bare layout — /challenge/start immediately redirects; no chrome needed.
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+import AppShell from "@/components/app/AppShell";
+
+export default function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <AppShell>{children}</AppShell>;
 }
