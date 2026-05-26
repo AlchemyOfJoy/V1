@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { query } from "./db";
 import {
   JOS_COMPONENTS,
@@ -29,7 +30,9 @@ export interface JosState {
   ready_for_path_choice: boolean;
 }
 
-export async function getJosState(userId: string): Promise<JosState> {
+export const getJosState = cache(async function getJosState(
+  userId: string,
+): Promise<JosState> {
   const rows = await query<{
     jos_install_started_at: string | Date | null;
     jos_install_completed_at: string | Date | null;
@@ -81,7 +84,7 @@ export async function getJosState(userId: string): Promise<JosState> {
     is_integration_day: isIntegrationDay,
     ready_for_path_choice: readyForPathChoice,
   };
-}
+});
 
 /** Stamp a component as installed. Idempotent — duplicates are absorbed. */
 export async function markComponentInstalled(

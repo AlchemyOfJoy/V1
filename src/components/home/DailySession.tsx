@@ -856,6 +856,7 @@ function RestDayCard({
 }
 
 function FreeInviteCard({ onAdvance }: { onAdvance: () => void }) {
+  const router = useRouter();
   return (
     <div className="flex flex-1 flex-col">
       <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
@@ -879,7 +880,7 @@ function FreeInviteCard({ onAdvance }: { onAdvance: () => void }) {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ mode: "challenge" }),
             });
-            window.location.reload();
+            router.refresh();
           }}
         >
           <button type="submit" className={btnPrimary}>
@@ -1137,13 +1138,16 @@ function JosCompleteCard({ onAdvance }: { onAdvance: () => void }) {
 }
 
 function PathChoiceCard() {
+  const router = useRouter();
   async function pick(mode: "challenge" | "practice") {
     await fetch("/api/me/challenge-mode", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode }),
     });
-    window.location.reload();
+    // router.refresh() rebuilds the server tree without dropping JS
+    // state — much faster than a full page reload.
+    router.refresh();
   }
   return (
     <div className="flex flex-1 flex-col">

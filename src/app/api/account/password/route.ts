@@ -33,14 +33,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not signed in." }, { status: 401 });
     }
     if (full.password_hash) {
-      if (!verifyPassword(current, full.password_hash)) {
+      const ok = await verifyPassword(current, full.password_hash);
+      if (!ok) {
         return NextResponse.json(
           { error: "Current password doesn't match." },
           { status: 400 },
         );
       }
     }
-    const hash = hashPassword(next);
+    const hash = await hashPassword(next);
     await query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [
       hash,
       user.id,

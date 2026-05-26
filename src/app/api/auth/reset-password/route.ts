@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const hashed = await hashPassword(password);
     await query(`UPDATE users SET password_hash = $2 WHERE id = $1`, [
       consumed.userId,
-      hashPassword(password),
+      hashed,
     ]);
     // Invalidate all existing sessions — log the user (and any attacker)
     // out everywhere.

@@ -13,12 +13,21 @@ export interface PublicUser {
   name: string | null;
 }
 
-export function hashPassword(password: string): string {
-  return bcrypt.hashSync(password, 10);
+/**
+ * Async bcrypt so the ~100ms hash work doesn't block the event loop
+ * during login. The hash itself doesn't get faster — but the function
+ * yields, so co-tenant requests on the same serverless instance can
+ * proceed in parallel.
+ */
+export function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }
 
-export function verifyPassword(password: string, hash: string): boolean {
-  return bcrypt.compareSync(password, hash);
+export function verifyPassword(
+  password: string,
+  hash: string,
+): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }
 
 export async function createUser(opts: {

@@ -36,7 +36,7 @@ function pool(): Pool {
  * On a fresh database, the value is missing and migrations run as normal,
  * then the table is seeded with the current version.
  */
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -550,6 +550,16 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_memory_stones_user
      ON memory_stones(user_id, created_at DESC)`,
+  // Indexes added for the JOS / Me / Wins hot paths — these tables
+  // are queried by (user_id, recency) on every render of those pages.
+  `CREATE INDEX IF NOT EXISTS idx_forgiveness_subjects_user
+     ON forgiveness_subjects(user_id, completed_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_priority_pillar_snapshots_user
+     ON priority_pillar_snapshots(user_id, taken_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_subscripts_user
+     ON subscripts(user_id, version DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_sessions_expires
+     ON sessions(expires_at)`,
   // --- Notifications: per-user channel prefs + idempotent delivery log ---
   `CREATE TABLE IF NOT EXISTS notification_preferences (
      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { query } from "./db";
 
 export interface WeekFocus {
@@ -157,7 +158,7 @@ export interface ChallengeStatus {
  * calendar day. If a user misses days, the count waits for them; the
  * day they next complete becomes their current_day.
  */
-export async function getChallengeStatus(
+export const getChallengeStatus = cache(async function getChallengeStatus(
   userId: string,
 ): Promise<ChallengeStatus> {
   const rows = await query<{
@@ -218,7 +219,7 @@ export async function getChallengeStatus(
     completed_at: completedAtIso,
     total_checkins: Number(row?.total ?? 0),
   };
-}
+});
 
 export async function setChallengeMode(
   userId: string,

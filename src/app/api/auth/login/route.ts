@@ -27,11 +27,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const user = await getUserByEmail(email);
-    if (
-      !user ||
-      !user.password_hash ||
-      !verifyPassword(password, user.password_hash)
-    ) {
+    if (!user || !user.password_hash) {
+      return NextResponse.json(
+        { error: "Incorrect email or password." },
+        { status: 401 },
+      );
+    }
+    const ok = await verifyPassword(password, user.password_hash);
+    if (!ok) {
       return NextResponse.json(
         { error: "Incorrect email or password." },
         { status: 401 },

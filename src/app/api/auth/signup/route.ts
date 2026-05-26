@@ -50,10 +50,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const passwordHash = await hashPassword(password);
     const user = await createUser({
       email,
       name: name || null,
-      passwordHash: hashPassword(password),
+      passwordHash,
     });
     // Auto-start the 90-Day Challenge so the user is on Day 1 from the
     // very first sign-in. Onboarding completes it as well; this is the
