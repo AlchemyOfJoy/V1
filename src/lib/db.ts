@@ -70,7 +70,7 @@ function pool(): SharedPool {
  * On a fresh database, the value is missing and migrations run as normal,
  * then the table is seeded with the current version.
  */
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -544,6 +544,8 @@ const SCHEMA = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_install_started_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_install_completed_at TIMESTAMPTZ`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_components_completed JSONB NOT NULL DEFAULT '[]'::jsonb`,
+  // Accelerated pacing tracking — Challenge Content Directive §5
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS accelerated_warning_shown BOOLEAN NOT NULL DEFAULT false`,
   // Forgot-password reset tokens — hashed, single-use, time-bound
   `CREATE TABLE IF NOT EXISTS password_resets (
      id BIGSERIAL PRIMARY KEY,

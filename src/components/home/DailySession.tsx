@@ -115,6 +115,9 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
           primaryLabel={String(p.primaryLabel ?? "Begin")}
           estimatedMin={p.estimatedMin as number | undefined}
           isMilestone={Boolean(p.isMilestone)}
+          coachCard={
+            (p.coachCard as { trigger: string; copy: string } | null) ?? null
+          }
           onSkip={advance}
         />
       );
@@ -182,6 +185,15 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
           mode={String(p.mode ?? "challenge") as "challenge" | "practice" | "free" | "jos_install" | "post_jos"}
           currentDay={(p.currentDay as number | null) ?? null}
           nextDay={(p.nextDay as number | null) ?? null}
+          closingLine={(p.closingLine as string | null) ?? null}
+          todayLogged={Boolean(p.todayLogged)}
+          milestoneTier={
+            (p.milestoneTier as
+              | "glow"
+              | "bloom"
+              | "ascension"
+              | null) ?? null
+          }
         />
       );
   }
@@ -479,6 +491,7 @@ function WhatsNextCard({
   primaryLabel,
   estimatedMin,
   isMilestone,
+  coachCard,
   onSkip,
 }: {
   eyebrow: string;
@@ -488,6 +501,7 @@ function WhatsNextCard({
   primaryLabel: string;
   estimatedMin?: number;
   isMilestone?: boolean;
+  coachCard?: { trigger: string; copy: string } | null;
   onSkip: () => void;
 }) {
   return (
@@ -512,6 +526,18 @@ function WhatsNextCard({
         <p className="mt-3 font-sans text-[11px] uppercase tracking-[0.22em] text-navy/45">
           ~{estimatedMin} min
         </p>
+      )}
+      {/* Mid-flow coach card from Brent — surfaces today's contextual
+          nudge inline so the user sees it without leaving the arc. */}
+      {coachCard && (
+        <aside className="mt-6 border-l-2 border-cyan/60 pl-4">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan">
+            From Brent
+          </p>
+          <p className="mt-1.5 font-serif text-[15px] italic leading-relaxed text-navy/80">
+            “{coachCard.copy}”
+          </p>
+        </aside>
       )}
       <div className="mt-auto pt-12 space-y-3">
         <Link href={href} className={btnPrimary}>
@@ -727,11 +753,23 @@ function JoyGlimpseCard({
   );
 }
 
+type CompletionResult = {
+  ok: boolean;
+  dayCompleted: number;
+  nextDay: number | null;
+  isMonthEnd: boolean;
+  isFinalDay: boolean;
+  showAccelerationWarning: boolean;
+};
+
 function CloseCard({
   isEvening,
   mode,
   currentDay,
   nextDay,
+  closingLine,
+  todayLogged,
+  milestoneTier,
 }: {
   isEvening: boolean;
   mode:
@@ -742,10 +780,23 @@ function CloseCard({
     | "post_jos";
   currentDay: number | null;
   nextDay: number | null;
+  closingLine: string | null;
+  todayLogged: boolean;
+  milestoneTier: "glow" | "bloom" | "ascension" | null;
 }) {
+  const router = useRouter();
+  const { celebrate } = useCelebrate();
+  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "acceleration" | "fast_warning">(
+    "idle",
+  );
+  const [completion, setCompletion] = useState<CompletionResult | null>(null);
+
   const headline =
     mode === "challenge" && currentDay !== null
-      ? `That's Day ${currentDay}.`
+      ? todayLogged
+        ? `That's Day ${currentDay}.`
+        : `Day ${currentDay} is ready.`
       : "That's it.";
   const subline =
     mode === "challenge" && nextDay
@@ -753,20 +804,186 @@ function CloseCard({
       : isEvening
         ? "Sleep well. Tomorrow’s already waiting."
         : "Come back anytime you need a Reset Breath. ⚡";
+
+  async function markComplete() {
+    if (busy || currentDay === null) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/me/complete-day", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ day: currentDay }),
+      });
+      const data = (await res.json().catch(() => null)) as CompletionResult | null;
+      if (!data?.ok) {
+        setBusy(false);
+        return;
+      }
+      setCompletion(data);
+
+      // Day 90 → route to the Ascension ceremony route.
+      if (data.isFinalDay) {
+        router.push("/day-90");
+        router.refresh();
+        return;
+      }
+
+      // Fire a Bloom celebration for monthly checkpoints + week-ends.
+      const tier = milestoneTier ?? (data.isMonthEnd ? "bloom" : null);
+      if (tier === "bloom" || tier === "ascension") {
+        celebrate({
+          size: "milestone",
+          eyebrow: data.isMonthEnd ? "Month complete" : "Week complete",
+          primary: data.isMonthEnd
+            ? `${data.dayCompleted} days in. Re-take JQ. Re-score Pillars.`
+            : `Day ${data.dayCompleted}.`,
+          secondary: data.isMonthEnd
+            ? "The system is compounding."
+            : "See you tomorrow.",
+        });
+      } else if (tier === "glow") {
+        celebrate({
+          size: "micro",
+          primary: `Day ${data.dayCompleted} done. ✦`,
+        });
+      } else {
+        celebrate({
+          size: "micro",
+          primary: `Day ${data.dayCompleted} done. ✦`,
+        });
+      }
+
+      // Month-end auto-route to JQ reassessment, otherwise show
+      // acceleration offer or the fast-pace warning.
+      if (data.isMonthEnd) {
+        setTimeout(() => {
+          router.push("/assessment");
+          router.refresh();
+        }, 1500);
+        return;
+      }
+      if (data.showAccelerationWarning) {
+        setPhase("fast_warning");
+      } else {
+        setPhase("acceleration");
+      }
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ─── ACCELERATION OFFER STATE ──────────────────────────────
+  if (phase === "acceleration" && completion?.nextDay) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-slate">
+          Want to keep going?
+        </p>
+        <h1 className="mt-4 font-serif text-[28px] font-medium leading-tight text-navy">
+          You can move to Day {completion.nextDay} if you have the time and
+          energy.
+        </h1>
+        <p className="mt-4 font-serif text-[16px] italic leading-relaxed text-slate">
+          Brent&apos;s strong suggestion: let today&apos;s work absorb. The
+          methodology works because of the spacing, not despite it.
+        </p>
+        <div className="mt-auto pt-12 space-y-3">
+          <button
+            type="button"
+            onClick={() => {
+              router.push("/dashboard");
+              router.refresh();
+            }}
+            className={`${btnPrimary} w-full`}
+          >
+            Advance to Day {completion.nextDay} →
+          </button>
+          <Link
+            href="/home"
+            className="block text-center font-sans text-[12px] font-semibold text-slate hover:text-navy"
+          >
+            I&apos;ll come back tomorrow
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── FAST-PACE WARNING (shown exactly once) ────────────────
+  if (phase === "fast_warning" && completion?.nextDay) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          A note
+        </p>
+        <h1 className="mt-4 font-serif text-[28px] font-medium leading-tight text-navy">
+          You&apos;ve been moving fast.
+        </h1>
+        <p className="mt-4 font-serif text-[16px] italic leading-relaxed text-slate">
+          That&apos;s fine — the work is yours.
+        </p>
+        <p className="mt-3 font-serif text-[15px] leading-relaxed text-navy/75">
+          But the gap between days is where the nervous system absorbs the
+          change. Skip the gap and you skip the transformation.
+        </p>
+        <p className="mt-3 font-serif text-[15px] leading-relaxed text-navy/75">
+          Brent&apos;s suggestion: slow down a touch.
+        </p>
+        <div className="mt-auto pt-12 space-y-3">
+          <Link
+            href="/home"
+            className={`${btnPrimary} w-full`}
+          >
+            Noted — going to pace myself
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              router.push("/dashboard");
+              router.refresh();
+            }}
+            className="block w-full font-sans text-[12px] font-semibold text-slate hover:text-navy"
+          >
+            I&apos;ll keep my pace
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── DEFAULT CLOSE CARD ────────────────────────────────────
   return (
     <div className="flex flex-1 flex-col">
       <p className="font-serif text-[36px] font-medium leading-tight text-navy">
         {headline}
       </p>
-      <hr className="my-6 w-12 border-navy/15" />
+      <hr className="my-6 w-12 border-slate/30" />
       <p className="font-serif text-[18px] leading-relaxed text-navy/80">
         You did your {isEvening ? "evening" : "morning"} work.
       </p>
-      <p className="mt-4 font-serif text-[16px] italic leading-relaxed text-navy/65">
-        {subline}
-      </p>
-      <div className="mt-auto pt-12">
-        <p className="text-center font-sans text-[11px] uppercase tracking-[0.22em] text-navy/45">
+      {/* Brent-voice closing line from the day-task data */}
+      {closingLine ? (
+        <p className="mt-4 font-serif text-[16px] italic leading-relaxed text-navy/70">
+          {closingLine}
+        </p>
+      ) : (
+        <p className="mt-4 font-serif text-[16px] italic leading-relaxed text-navy/65">
+          {subline}
+        </p>
+      )}
+      <div className="mt-auto pt-12 space-y-3">
+        {mode === "challenge" && currentDay !== null && !todayLogged && (
+          <button
+            type="button"
+            onClick={markComplete}
+            disabled={busy}
+            className={`${btnPrimary} w-full`}
+          >
+            {busy ? "Saving…" : `Mark Day ${currentDay} complete →`}
+          </button>
+        )}
+        <p className="text-center font-sans text-[11px] uppercase tracking-[0.22em] text-slate/55">
           You can put it down now.
         </p>
       </div>

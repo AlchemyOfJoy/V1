@@ -239,6 +239,7 @@ export async function getDailySession(opts: {
             primaryLabel: task.primaryLabel,
             estimatedMin: task.estimatedMin,
             isMilestone: task.isMilestone,
+            coachCard: task.coachCard ?? null,
           },
         });
       }
@@ -272,6 +273,10 @@ export async function getDailySession(opts: {
   });
 
   // Card 6 — Close. Copy varies by mode.
+  const closeTask =
+    mode === "challenge" && currentDay !== null && currentDay >= 1 && currentDay <= 90
+      ? getDayTask(currentDay)
+      : null;
   cards.push({
     kind: "close",
     payload: {
@@ -282,6 +287,12 @@ export async function getDailySession(opts: {
         mode === "challenge" && currentDay !== null && currentDay < 90
           ? currentDay + 1
           : null,
+      // Challenge-Mode extras: the day's closing line and a flag the
+      // UI uses to surface the "Mark Day N complete" CTA when the
+      // user hasn't yet logged today.
+      closingLine: closeTask?.closingLine ?? null,
+      todayLogged,
+      milestoneTier: closeTask?.milestoneTier ?? null,
     },
   });
 
