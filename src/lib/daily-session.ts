@@ -173,13 +173,24 @@ export async function getDailySession(opts: {
   if (mode === "jos_install" || mode === "post_jos") {
     const jos = await getJosState(opts.userId);
     if (jos.ready_for_path_choice || jos.install_completed_at) {
-      // All 6 components done — choose Path A (Challenge) or Path B (Practice).
+      // All 6 components done. The Ascension ceremony plays exactly
+      // once — the tutorial_flag 'jos_ceremony_seen' is stamped by
+      // JosCompleteCard's mount effect, so subsequent visits skip
+      // straight to the path-choice card.
+      const flagRows = await query<{ flags: Record<string, boolean> | null }>(
+        `SELECT tutorial_flags AS flags FROM users WHERE id = $1`,
+        [opts.userId],
+      );
+      const seenCeremony = flagRows[0]?.flags?.jos_ceremony_seen === true;
+      if (!seenCeremony) {
+        cards.push({
+          kind: "jos_complete",
+          payload: { components: JOS_COMPONENTS.map((c) => c.name) },
+        });
+      }
       cards.push({
-        kind: jos.install_completed_at ? "path_choice" : "jos_complete",
-        payload: {
-          jq: null,
-          components: JOS_COMPONENTS.map((c) => c.name),
-        },
+        kind: "path_choice",
+        payload: { components: JOS_COMPONENTS.map((c) => c.name) },
       });
     } else if (jos.todays_component) {
       cards.push({

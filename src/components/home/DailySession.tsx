@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { btnPrimary } from "@/lib/ui";
@@ -964,33 +964,93 @@ function JosIntegrationDayCard({
   );
 }
 
+/**
+ * The Day 8 Ascension ceremony (JOS-First §6). 12-15s emotional
+ * animation: white → midnight navy, a single gold point of light
+ * grows from center, resolves into the Triple Sparkle, headline +
+ * subline fade in, then a CTA. Plays once per user (suppressed on
+ * repeat visits via a tutorial flag set after first view).
+ */
 function JosCompleteCard({ onAdvance }: { onAdvance: () => void }) {
+  // Choreography stages — each toggled on a timer
+  const [stage, setStage] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setStage(1), 300), //   navy fade begins
+      setTimeout(() => setStage(2), 2000), //  gold point appears
+      setTimeout(() => setStage(3), 5500), //  sparkle resolves
+      setTimeout(() => setStage(4), 7000), //  headline fades in
+      setTimeout(() => setStage(5), 9000), //  cta appears
+    ];
+    // Stamp the tutorial_flag so this only plays the first time
+    fetch("/api/me/tutorial-flag", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ flag: "jos_ceremony_seen" }),
+    }).catch(() => {});
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, []);
+
   return (
-    <div className="flex flex-1 flex-col">
-      <p
+    <div
+      className={`fixed inset-0 z-[55] flex flex-col items-center justify-center px-8 text-center transition-colors duration-[1500ms] ${
+        stage >= 1 ? "bg-navy" : "bg-white"
+      }`}
+    >
+      {/* The point of light */}
+      <div
         aria-hidden
-        className="text-center font-serif text-[44px] text-gold"
+        className={`relative mb-10 flex items-center justify-center transition-all duration-[3000ms] ease-out ${
+          stage >= 2 ? "h-32 w-32 opacity-100" : "h-1 w-1 opacity-0"
+        }`}
       >
-        ✦
-      </p>
-      <p className="mt-6 text-center font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan">
-        Component 06 · Installed
-      </p>
-      <h1 className="mt-4 text-center font-serif text-[36px] font-medium leading-tight text-navy">
-        Your Joyful Operating System is installed.
+        <div
+          className="absolute inset-0 rounded-full bg-gold blur-3xl"
+          style={{ opacity: stage >= 3 ? 0.4 : 0.7 }}
+        />
+        <div
+          className={`relative font-serif transition-all duration-[1000ms] ${
+            stage >= 3
+              ? "text-[64px] text-gold opacity-100"
+              : "text-[24px] text-gold/0"
+          }`}
+        >
+          ✦
+        </div>
+      </div>
+
+      <h1
+        className={`font-serif text-[40px] font-medium leading-tight text-white transition-opacity duration-[1500ms] sm:text-[48px] ${
+          stage >= 4 ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        Your Joyful Operating System
+        <br />
+        is <em className="text-cyan">installed</em>.
       </h1>
-      <p className="mt-4 text-center font-serif text-[18px] italic leading-relaxed text-slate">
+
+      <p
+        className={`mt-6 font-serif text-[20px] italic leading-relaxed text-white/80 transition-opacity duration-[1500ms] ${
+          stage >= 4 ? "opacity-100" : "opacity-0"
+        }`}
+      >
         Six components. Yours forever.
       </p>
-      <div className="mt-auto pt-12">
-        <button
-          type="button"
-          onClick={onAdvance}
-          className={`${btnPrimary} w-full`}
-        >
-          What&apos;s next →
-        </button>
-      </div>
+
+      <button
+        type="button"
+        onClick={onAdvance}
+        className={`mt-12 inline-flex items-center justify-center rounded-full bg-cyan px-8 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-white transition-opacity duration-[1500ms] hover:bg-white hover:text-navy ${
+          stage >= 5
+            ? "opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      >
+        What&apos;s next →
+      </button>
     </div>
   );
 }

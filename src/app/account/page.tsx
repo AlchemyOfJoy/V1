@@ -9,112 +9,201 @@ import {
 } from "@/components/account/AccountForms";
 import AccessibilityToggle from "@/components/account/AccessibilityToggle";
 import ModeSwitcher from "@/components/account/ModeSwitcher";
+import JosStatus from "@/components/account/JosStatus";
 import { getChallengeStatus } from "@/lib/challenge";
+import { getJosState } from "@/lib/jos";
 
 export const metadata: Metadata = {
-  title: "Account",
+  title: "Settings",
   robots: { index: false },
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
+/**
+ * Settings (JOS-First Architecture §14). Lives inside My Alchemy
+ * (no separate Settings tab per UI/UX Overhaul §0). Sections:
+ *   • YOUR MODE       — current mode + path-switching controls
+ *   • YOUR JOS        — per-component state with deep links
+ *   • DAILY RITUALS   — SubScript times + notification preferences
+ *   • PROFILE         — name + password
+ *   • YOUR DATA       — export, accessibility
+ *   • ACCOUNT         — delete account
+ */
+export default async function SettingsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const full = await getUserById(user.id);
   const hasPassword = !!full?.password_hash;
-  const challenge = await getChallengeStatus(user.id);
+  const [challenge, jos] = await Promise.all([
+    getChallengeStatus(user.id),
+    getJosState(user.id),
+  ]);
 
   return (
-    <main className="px-6 py-12 sm:py-16">
-      <article className="mx-auto max-w-2xl space-y-12">
-        <header>
-          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-deep">
-            Account
-          </p>
-          <h1 className="mt-3 font-serif text-[40px] font-medium leading-tight tracking-tight text-navy sm:text-[48px]">
-            Your <em className="text-cyan-deep">settings</em>
-          </h1>
-        </header>
+    <main className="mx-auto max-w-2xl px-6 pb-16 pt-10 sm:pt-14">
+      <Link
+        href="/me"
+        className="font-sans text-[12px] text-slate hover:text-cyan"
+      >
+        ← My Alchemy
+      </Link>
 
-        <section className="space-y-4 rounded-3xl border border-navy/10 bg-white p-6 sm:p-8">
-          <h2 className="font-serif text-[22px] font-medium text-navy">
-            Profile
-          </h2>
-          <ProfileForm initialName={user.name ?? ""} email={user.email} />
-        </section>
+      <header className="mt-8">
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.26em] text-cyan">
+          Settings
+        </p>
+        <h1 className="mt-4 font-serif text-[44px] font-medium leading-[1.1] tracking-tight text-navy sm:text-[56px]">
+          Your <em className="text-cyan">controls</em>.
+        </h1>
+      </header>
 
-        <section className="space-y-4 rounded-3xl border border-navy/10 bg-white p-6 sm:p-8">
-          <h2 className="font-serif text-[22px] font-medium text-navy">
-            {hasPassword ? "Change password" : "Set a password"}
-          </h2>
-          <PasswordForm hasPassword={hasPassword} />
-        </section>
+      <div aria-hidden className="my-10 h-px w-16 bg-slate/30" />
 
-        <section className="space-y-4 rounded-3xl border border-navy/10 bg-white p-6 sm:p-8">
-          <h2 className="font-serif text-[22px] font-medium text-navy">
-            Your path through the methodology
-          </h2>
-          <p className="font-sans text-[14px] font-light text-navy/65">
-            The Challenge IS the curriculum for the first 90 days. After
-            that, the practice continues — quieter, your call.
-          </p>
+      {/* ─── YOUR MODE ─────────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          Your mode
+        </p>
+        <p className="mt-3 font-serif text-[17px] italic leading-relaxed text-slate">
+          {modeBlurb(challenge.mode, challenge.current_day)}
+        </p>
+        <div className="mt-5">
           <ModeSwitcher initialMode={challenge.mode} />
-        </section>
+        </div>
+      </section>
 
-        <section className="space-y-3">
-          <h2 className="font-serif text-[22px] font-medium text-navy">
-            Accessibility
-          </h2>
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      {/* ─── YOUR JOS ──────────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          Your JOS
+        </p>
+        <p className="mt-3 font-serif text-[15px] italic leading-relaxed text-slate">
+          {jos.install_completed_at
+            ? "Six components installed. Tap any to revisit or edit."
+            : `${jos.components_completed.length} of 6 installed.`}
+        </p>
+        <div className="mt-5">
+          <JosStatus userId={user.id} jos={jos} />
+        </div>
+      </section>
+
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      {/* ─── DAILY RITUALS ─────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          Daily rituals
+        </p>
+        <p className="mt-3 font-serif text-[15px] italic leading-relaxed text-slate">
+          Reminder times, push and email channels.
+        </p>
+        <Link
+          href="/me/notifications"
+          className="mt-5 inline-flex items-center gap-2 font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan hover:text-navy"
+        >
+          Open notification settings →
+        </Link>
+      </section>
+
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      {/* ─── PROFILE + PASSWORD ────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          Profile
+        </p>
+        <div className="mt-5">
+          <ProfileForm initialName={user.name ?? ""} email={user.email} />
+        </div>
+      </section>
+
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          {hasPassword ? "Change password" : "Set a password"}
+        </p>
+        <div className="mt-5">
+          <PasswordForm hasPassword={hasPassword} />
+        </div>
+      </section>
+
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      {/* ─── ACCESSIBILITY ─────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          Accessibility
+        </p>
+        <div className="mt-5">
           <AccessibilityToggle />
-        </section>
+        </div>
+      </section>
 
-        <section className="space-y-4 rounded-3xl border border-navy/10 bg-white p-6 sm:p-8">
-          <h2 className="font-serif text-[22px] font-medium text-navy">
-            Your data
-          </h2>
-          <p className="font-sans text-[14px] font-light text-navy/65">
-            Download a full JSON backup or print a workbook PDF of your
-            responses any time.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/curriculum/export"
-              className="rounded-full border border-navy/20 px-5 py-2.5 font-sans text-[13px] font-medium text-navy transition hover:border-cyan-deep hover:text-cyan-deep"
-            >
-              Open export page →
-            </Link>
-            <a
-              href="/api/curriculum/export"
-              className="rounded-full border border-navy/20 px-5 py-2.5 font-sans text-[13px] font-medium text-navy transition hover:border-cyan-deep hover:text-cyan-deep"
-            >
-              Download JSON
-            </a>
-          </div>
-        </section>
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
 
-        <section className="space-y-4 rounded-3xl border border-[#8a6d00]/30 bg-[#fdf6e0] p-6 sm:p-8">
-          <h2 className="font-serif text-[22px] font-medium text-[#8a6d00]">
-            Delete account
-          </h2>
-          <p className="font-sans text-[14px] font-light text-navy/70">
-            Permanently removes your account and every entry you&apos;ve
-            written — worksheets, journal, forgiveness, snapshots, all of
-            it. There&apos;s no undo. Download your JSON first if you want
-            a copy.
-          </p>
-          <DeleteAccountForm email={user.email} />
-        </section>
-
-        <footer className="border-t border-navy/10 pt-6">
+      {/* ─── YOUR DATA ─────────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          Your data
+        </p>
+        <p className="mt-3 font-serif text-[15px] italic leading-relaxed text-slate">
+          Download a full JSON backup any time.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
           <Link
-            href="/curriculum"
-            className="font-sans text-[13px] text-navy/55 transition-colors hover:text-cyan-deep"
+            href="/curriculum/export"
+            className="inline-flex items-center justify-center rounded-full border border-slate/30 px-5 py-2.5 font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-navy transition hover:border-cyan hover:text-cyan"
           >
-            ← Back to curriculum
+            Open export →
           </Link>
-        </footer>
-      </article>
+          <a
+            href="/api/curriculum/export"
+            className="inline-flex items-center justify-center rounded-full border border-slate/30 px-5 py-2.5 font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-navy transition hover:border-cyan hover:text-cyan"
+          >
+            Download JSON
+          </a>
+        </div>
+      </section>
+
+      <div aria-hidden className="my-10 h-px w-full bg-slate/15" />
+
+      {/* ─── DELETE ACCOUNT ────────────────────────────────── */}
+      <section>
+        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-cyan">
+          Delete account
+        </p>
+        <p className="mt-3 font-serif text-[15px] italic leading-relaxed text-slate">
+          Permanently removes your account and every entry you&apos;ve
+          written. Download your JSON first if you want a copy.
+        </p>
+        <div className="mt-5">
+          <DeleteAccountForm email={user.email} />
+        </div>
+      </section>
     </main>
   );
+}
+
+function modeBlurb(
+  mode:
+    | "jos_install"
+    | "post_jos"
+    | "challenge"
+    | "practice"
+    | "free",
+  currentDay: number,
+): string {
+  if (mode === "jos_install") return "Currently installing your JOS.";
+  if (mode === "post_jos")
+    return "Your JOS is installed. Choose Path A (Challenge) or Path B (Practice).";
+  if (mode === "challenge") {
+    if (currentDay > 90) return "Currently in Practice Mode (post-Challenge).";
+    return `Currently on Day ${currentDay} of the 90-Day Challenge.`;
+  }
+  if (mode === "practice") return "Currently in Practice Mode.";
+  return "Currently in Free Mode.";
 }
