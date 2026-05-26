@@ -72,6 +72,9 @@ export async function POST(req: NextRequest) {
       } else if (count === 25) {
         await awardBadge(user.id, "joy_25");
         milestone = { count, label: "Twenty-five Joys" };
+        // 25-entry threshold = JOS Component 04 (List of Joy) installed.
+        const { markComponentInstalled } = await import("@/lib/jos");
+        await markComponentInstalled(user.id, "list_of_joy");
       } else if (count === 100) {
         await awardBadge(user.id, "joy_100");
         milestone = { count, label: "One hundred." };

@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { setChallengeMode, startChallenge } from "@/lib/challenge";
+import { setChallengeMode } from "@/lib/challenge";
+import { beginJosInstall } from "@/lib/jos";
 
 /**
- * Onboarding completion (Cadence Directive §1 / §10).
+ * Onboarding completion (JOS-First Architecture §3, §13).
  *
- * The user has just walked the tutorial. The door they picked sets
- * their starting state:
+ * After Day 0 onboarding, every new user enters the JOS install phase.
+ * The "door" the user picked during onboarding is recorded as a hint
+ * for later — but the path choice (Challenge vs Practice) happens AFTER
+ * the install completes, not before. There are no skips per §16.
  *
- *   "book"      → Challenge mode (with optional book sync later)
- *   "retreat"   → Practice mode (assumes some install already done)
- *   "challenge" → Challenge mode (full 90-Day arc)
- *   "explore"   → Free mode (no prescribed sequence)
- *
- * Falls back to Challenge if no door was selected — the directive's
- * default for new signups.
+ * The "explore" door no longer routes to Free Mode at onboarding —
+ * those users still install the JOS; they just may pick Practice Mode
+ * (Path B) at the post-JOS choice instead of the Challenge.
  */
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -23,20 +22,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  let body: { door?: unknown } = {};
   try {
-    body = await req.json();
+    await req.json();
   } catch {
-    // empty body is fine
+    // body is optional now — the door is informational
   }
-  const door = typeof body.door === "string" ? body.door : null;
-
-  const mode =
-    door === "explore"
-      ? "free"
-      : door === "retreat"
-        ? "practice"
-        : "challenge";
 
   try {
     await query(
@@ -45,11 +35,9 @@ export async function POST(req: NextRequest) {
        WHERE id = $1`,
       [user.id],
     );
-    await setChallengeMode(user.id, mode);
-    if (mode === "challenge") {
-      await startChallenge(user.id);
-    }
-    return NextResponse.json({ ok: true, mode });
+    await setChallengeMode(user.id, "jos_install");
+    await beginJosInstall(user.id);
+    return NextResponse.json({ ok: true, mode: "jos_install" });
   } catch (err) {
     console.error("[onboarding] complete failed:", err);
     return NextResponse.json(

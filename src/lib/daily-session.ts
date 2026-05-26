@@ -4,6 +4,7 @@ import { getDayTask, isRestDay, phaseForDay } from "./challenge-days";
 import { getTodayPulse } from "./joy-pulse";
 import { listJoyItems } from "./list-of-joy";
 import { todayDrop } from "./daily-drop";
+import { getJosState, JOS_COMPONENTS } from "./jos";
 
 /**
  * Daily Session card resolution per the Cadence Directive §3 / §4 / §5.
@@ -28,6 +29,10 @@ export interface JoyDrop {
 export type CardKind =
   | "letter"
   | "missed_days"
+  | "jos_install_day"
+  | "jos_integration_day"
+  | "jos_complete"
+  | "path_choice"
   | "greeting"
   | "joy_pulse"
   | "morning_ritual"
@@ -165,7 +170,41 @@ export async function getDailySession(opts: {
   if (!pulse) cards.push({ kind: "joy_pulse" });
 
   // Card 3 — mode-aware "what to do today"
-  if (mode === "challenge" && !isGraduated && currentDay !== null) {
+  if (mode === "jos_install" || mode === "post_jos") {
+    const jos = await getJosState(opts.userId);
+    if (jos.ready_for_path_choice || jos.install_completed_at) {
+      // All 6 components done — choose Path A (Challenge) or Path B (Practice).
+      cards.push({
+        kind: jos.install_completed_at ? "path_choice" : "jos_complete",
+        payload: {
+          jq: null,
+          components: JOS_COMPONENTS.map((c) => c.name),
+        },
+      });
+    } else if (jos.todays_component) {
+      cards.push({
+        kind: "jos_install_day",
+        payload: {
+          dayOffset: jos.current_install_day,
+          componentNumber: jos.todays_component.number,
+          eyebrow: jos.todays_component.eyebrow,
+          title: jos.todays_component.name,
+          description: jos.todays_component.description,
+          estimatedMin: jos.todays_component.estimatedMin,
+          href: jos.todays_component.primaryHref,
+          completedCount: jos.components_completed.length,
+        },
+      });
+    } else if (jos.is_integration_day) {
+      cards.push({
+        kind: "jos_integration_day",
+        payload: {
+          dayOffset: jos.current_install_day,
+          completedCount: jos.components_completed.length,
+        },
+      });
+    }
+  } else if (mode === "challenge" && !isGraduated && currentDay !== null) {
     if (isRestDay(currentDay)) {
       cards.push({
         kind: "rest_day",

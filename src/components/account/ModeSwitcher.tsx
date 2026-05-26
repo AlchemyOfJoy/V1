@@ -2,22 +2,39 @@
 
 import { useState } from "react";
 
+type Mode =
+  | "jos_install"
+  | "post_jos"
+  | "challenge"
+  | "practice"
+  | "free";
+
 /**
- * Switch between Challenge / Practice / Free modes (Cadence Directive §1).
+ * Switch between user modes (Cadence Directive §1 + JOS-First §14).
  *
- * Switching is durable — the choice persists, and Daily Session resolves
- * differently next time the user opens the app.
+ * Per JOS-First §16, users in jos_install cannot switch out — the
+ * install is the price of admission. Users in post_jos see the path
+ * choice. Everyone else can freely flip between Challenge / Practice.
  *
- * Tone: never coercive. Each option is described in Brent's voice.
+ * Switching is durable — the choice persists.
  */
 export default function ModeSwitcher({
   initialMode,
 }: {
-  initialMode: "challenge" | "practice" | "free";
+  initialMode: Mode;
 }) {
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  if (mode === "jos_install") {
+    return (
+      <p className="font-serif text-[15px] italic text-slate">
+        You&apos;re installing your JOS. The path choice unlocks once all
+        six components are in place.
+      </p>
+    );
+  }
 
   async function pick(next: "challenge" | "practice" | "free") {
     if (next === mode || saving) return;

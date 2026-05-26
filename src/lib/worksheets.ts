@@ -1,6 +1,15 @@
 import { createHash } from "crypto";
 import { query } from "./db";
 import type { WorksheetData } from "./curriculum";
+import { markComponentInstalled, type JosComponentId } from "./jos";
+
+/** Worksheets that double as JOS install components (JOS-First §5). */
+const JOS_WORKSHEET_MAP: Record<string, JosComponentId> = {
+  "02_core_narrative": "core_narrative",
+  "02_self_eulogy": "self_eulogy",
+  "02_priority_pillars": "priority_pillars",
+  "02_subscript": "subscript",
+};
 
 interface WorksheetRow {
   worksheet_id: string;
@@ -70,7 +79,8 @@ export async function saveWorksheetResponse(
 
 /** Mark a worksheet as completed (idempotent — keeps the original time).
  *  Snapshots the current state to the versions table on each completion
- *  so the user has a clean checkpoint they can return to. */
+ *  so the user has a clean checkpoint they can return to. If the
+ *  worksheet maps to a JOS component, also stamps that install. */
 export async function markWorksheetComplete(
   userId: string,
   worksheetId: string,
@@ -82,6 +92,10 @@ export async function markWorksheetComplete(
     [userId, worksheetId],
   );
   await snapshotCurrentVersion(userId, worksheetId);
+  const josId = JOS_WORKSHEET_MAP[worksheetId];
+  if (josId) {
+    await markComponentInstalled(userId, josId);
+  }
 }
 
 /** Take an explicit snapshot. Use when the user signals "I want to

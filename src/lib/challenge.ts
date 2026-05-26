@@ -117,7 +117,25 @@ export const WEEKS: WeekFocus[] = [
 
 export const TOTAL_DAYS = 90;
 
-export type ChallengeMode = "challenge" | "practice" | "free";
+/**
+ * User mode (JOS-First Architecture §13).
+ *
+ *   jos_install — installing the 6 JOS components (the only entry state
+ *                 for new signups). Today surfaces the day's component.
+ *   post_jos    — JOS install complete; user must choose Path A or B.
+ *                 Today surfaces the path-choice card.
+ *   challenge   — In active 90-Day Challenge (Path A). Today surfaces
+ *                 day-specific Challenge content.
+ *   practice    — Daily Practice Mode (Path B, or post-Day-90). Today
+ *                 surfaces one suggestion + daily ritual.
+ *   free        — legacy / exploratory mode (no prescribed sequence).
+ */
+export type ChallengeMode =
+  | "jos_install"
+  | "post_jos"
+  | "challenge"
+  | "practice"
+  | "free";
 
 export interface ChallengeStatus {
   mode: ChallengeMode;
@@ -210,7 +228,8 @@ export async function setChallengeMode(
     `UPDATE users SET challenge_mode = $2 WHERE id = $1`,
     [userId, mode],
   );
-  // Switching INTO challenge mode without a start date kicks one off
+  // Path A — switching INTO the active 90-Day Challenge stamps the
+  // start time. JOS install / post_jos / practice / free leave it null.
   if (mode === "challenge") {
     await query(
       `UPDATE users

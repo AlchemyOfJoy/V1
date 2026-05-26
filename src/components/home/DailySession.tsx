@@ -83,7 +83,7 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
         <GreetingCard
           firstName={String(p.firstName ?? "")}
           currentDay={(p.currentDay as number | null) ?? null}
-          mode={String(p.mode ?? "challenge") as "challenge" | "practice" | "free"}
+          mode={String(p.mode ?? "challenge") as "challenge" | "practice" | "free" | "jos_install" | "post_jos"}
           isGraduated={Boolean(p.isGraduated)}
           drop={p.drop as { id: string; body: string; source?: string | null; saved: boolean }}
           onAdvance={advance}
@@ -118,6 +118,32 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
           onSkip={advance}
         />
       );
+    case "jos_install_day":
+      return (
+        <JosInstallDayCard
+          dayOffset={Number(p.dayOffset ?? 0)}
+          componentNumber={Number(p.componentNumber ?? 1)}
+          eyebrow={String(p.eyebrow ?? "")}
+          title={String(p.title ?? "")}
+          description={String(p.description ?? "")}
+          estimatedMin={Number(p.estimatedMin ?? 0)}
+          href={String(p.href ?? "/me")}
+          completedCount={Number(p.completedCount ?? 0)}
+          onSkip={advance}
+        />
+      );
+    case "jos_integration_day":
+      return (
+        <JosIntegrationDayCard
+          dayOffset={Number(p.dayOffset ?? 0)}
+          completedCount={Number(p.completedCount ?? 0)}
+          onAdvance={advance}
+        />
+      );
+    case "jos_complete":
+      return <JosCompleteCard onAdvance={advance} />;
+    case "path_choice":
+      return <PathChoiceCard />;
     case "rest_day":
       return (
         <RestDayCard
@@ -153,7 +179,7 @@ function renderCard(card: SessionCard, advance: () => void): React.ReactNode {
       return (
         <CloseCard
           isEvening={Boolean(p.isEvening)}
-          mode={String(p.mode ?? "challenge") as "challenge" | "practice" | "free"}
+          mode={String(p.mode ?? "challenge") as "challenge" | "practice" | "free" | "jos_install" | "post_jos"}
           currentDay={(p.currentDay as number | null) ?? null}
           nextDay={(p.nextDay as number | null) ?? null}
         />
@@ -197,16 +223,25 @@ function GreetingCard({
 }: {
   firstName: string;
   currentDay: number | null;
-  mode: "challenge" | "practice" | "free";
+  mode:
+    | "challenge"
+    | "practice"
+    | "free"
+    | "jos_install"
+    | "post_jos";
   isGraduated: boolean;
   drop: { id: string; body: string; source?: string | null; saved: boolean };
   onAdvance: () => void;
 }) {
   const hour = new Date().getHours();
   const greeting = hour < 5 ? "Late night," : hour < 12 ? "Good morning," : hour < 18 ? "Hello," : "Good evening,";
-  // Mode-aware day marker (Cadence Directive §3.1, §4.1)
+  // Mode-aware day marker (Cadence Directive §3.1 / §4.1 + JOS-First §12)
   let dayMarker: string | null = null;
-  if (mode === "challenge" && currentDay !== null && !isGraduated) {
+  if (mode === "jos_install") {
+    dayMarker = "Installing your JOS";
+  } else if (mode === "post_jos") {
+    dayMarker = "JOS installed";
+  } else if (mode === "challenge" && currentDay !== null && !isGraduated) {
     dayMarker = `Day ${currentDay} of your Challenge`;
   } else if (mode === "practice" || isGraduated) {
     dayMarker = currentDay && currentDay > 90 ? `Day ${currentDay - 90} post-install` : "The practice";
@@ -618,7 +653,12 @@ function CloseCard({
   nextDay,
 }: {
   isEvening: boolean;
-  mode: "challenge" | "practice" | "free";
+  mode:
+    | "challenge"
+    | "practice"
+    | "free"
+    | "jos_install"
+    | "post_jos";
   currentDay: number | null;
   nextDay: number | null;
 }) {
@@ -803,6 +843,229 @@ function GraduationCard({ onAdvance }: { onAdvance: () => void }) {
           Continue
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ──────── JOS-First Architecture cards ──────── */
+
+function JosInstallDayCard({
+  dayOffset,
+  componentNumber,
+  eyebrow,
+  title,
+  description,
+  estimatedMin,
+  href,
+  completedCount,
+  onSkip,
+}: {
+  dayOffset: number;
+  componentNumber: number;
+  eyebrow: string;
+  title: string;
+  description: string;
+  estimatedMin: number;
+  href: string;
+  completedCount: number;
+  onSkip: () => void;
+}) {
+  const padded = String(componentNumber).padStart(2, "0");
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan">
+        Day {dayOffset} · Installing your JOS
+      </p>
+      <h1 className="mt-4 font-serif text-[32px] font-medium leading-tight text-navy">
+        {title}.
+      </h1>
+      <p className="mt-2 font-sans text-[12px] font-semibold uppercase tracking-[0.22em] text-slate">
+        Component {padded} of 06 · {eyebrow}
+      </p>
+      <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-slate">
+        {description}
+      </p>
+      <p className="mt-3 font-sans text-[12px] uppercase tracking-[0.22em] text-slate/70">
+        About {estimatedMin} minutes.
+      </p>
+
+      {/* 6-dot progress row */}
+      <ol className="mt-6 flex gap-2" aria-label="JOS install progress">
+        {Array.from({ length: 6 }, (_, i) => {
+          const done = i < completedCount;
+          const current = i === completedCount;
+          return (
+            <li
+              key={i}
+              className={`h-2 w-2 rounded-full ${
+                done
+                  ? "bg-cyan"
+                  : current
+                    ? "ring-2 ring-cyan ring-offset-1"
+                    : "bg-slate/20"
+              }`}
+            />
+          );
+        })}
+      </ol>
+
+      <div className="mt-auto pt-12 space-y-3">
+        <Link href={href} className={btnPrimary}>
+          Begin Component {padded} →
+        </Link>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="block w-full font-sans text-[12px] font-semibold text-slate hover:text-navy"
+        >
+          Not today
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function JosIntegrationDayCard({
+  dayOffset,
+  completedCount,
+  onAdvance,
+}: {
+  dayOffset: number;
+  completedCount: number;
+  onAdvance: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan">
+        Day {dayOffset} · Integration
+      </p>
+      <h1 className="mt-4 font-serif text-[32px] font-medium leading-tight text-navy">
+        Today, we let yesterday&apos;s work absorb.
+      </h1>
+      <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-slate">
+        Read what you wrote. Sit with it. Notice what comes up.
+      </p>
+      <p className="mt-6 font-sans text-[12px] uppercase tracking-[0.22em] text-slate">
+        {completedCount} of 6 installed
+      </p>
+      <div className="mt-auto pt-12 space-y-3">
+        <Link href="/me" className={btnPrimary}>
+          Read what you&apos;ve written →
+        </Link>
+        <button
+          type="button"
+          onClick={onAdvance}
+          className="block w-full font-sans text-[12px] font-semibold text-slate hover:text-navy"
+        >
+          Just close the app
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function JosCompleteCard({ onAdvance }: { onAdvance: () => void }) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p
+        aria-hidden
+        className="text-center font-serif text-[44px] text-gold"
+      >
+        ✦
+      </p>
+      <p className="mt-6 text-center font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan">
+        Component 06 · Installed
+      </p>
+      <h1 className="mt-4 text-center font-serif text-[36px] font-medium leading-tight text-navy">
+        Your Joyful Operating System is installed.
+      </h1>
+      <p className="mt-4 text-center font-serif text-[18px] italic leading-relaxed text-slate">
+        Six components. Yours forever.
+      </p>
+      <div className="mt-auto pt-12">
+        <button
+          type="button"
+          onClick={onAdvance}
+          className={`${btnPrimary} w-full`}
+        >
+          What&apos;s next →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PathChoiceCard() {
+  async function pick(mode: "challenge" | "practice") {
+    await fetch("/api/me/challenge-mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode }),
+    });
+    window.location.reload();
+  }
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan">
+        What&apos;s next?
+      </p>
+      <h1 className="mt-4 font-serif text-[32px] font-medium leading-tight text-navy">
+        You have a working operating system.
+      </h1>
+      <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-slate">
+        Now what do you want to do with it?
+      </p>
+
+      <div className="mt-8 space-y-4">
+        <button
+          type="button"
+          onClick={() => pick("challenge")}
+          className="block w-full border-t border-slate/25 pt-5 text-left transition hover:border-cyan"
+        >
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan">
+            Path A · Structured program
+          </p>
+          <p className="mt-2 font-serif text-[22px] font-medium text-navy">
+            Start the AOJ 90-Day Challenge
+          </p>
+          <p className="mt-1 font-serif text-[15px] italic text-slate">
+            Ninety days. Brent&apos;s structured program. 20-60 min/day.
+          </p>
+          <span
+            aria-hidden
+            className="mt-3 inline-block font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-cyan"
+          >
+            Start the 90-day challenge →
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => pick("practice")}
+          className="block w-full border-t border-slate/25 pt-5 text-left transition hover:border-cyan"
+        >
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan">
+            Path B · Daily practice
+          </p>
+          <p className="mt-2 font-serif text-[22px] font-medium text-navy">
+            Live with your JOS
+          </p>
+          <p className="mt-1 font-serif text-[15px] italic text-slate">
+            Run the daily practice without a structured curriculum.
+            5-15 min/day.
+          </p>
+          <span
+            aria-hidden
+            className="mt-3 inline-block font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-slate"
+          >
+            Enter practice mode →
+          </span>
+        </button>
+      </div>
+
+      <p className="mt-6 text-center font-serif text-[14px] italic text-slate">
+        You can switch paths anytime.
+      </p>
     </div>
   );
 }

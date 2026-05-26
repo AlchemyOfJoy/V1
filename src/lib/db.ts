@@ -36,7 +36,7 @@ function pool(): Pool {
  * On a fresh database, the value is missing and migrations run as normal,
  * then the table is seeded with the current version.
  */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -506,6 +506,10 @@ const SCHEMA = [
   // Challenge Cadence Directive — three user states + completion-based day count
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_mode TEXT NOT NULL DEFAULT 'challenge'`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS challenge_completed_at TIMESTAMPTZ`,
+  // JOS-First Architecture Directive — JOS install lifecycle
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_install_started_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_install_completed_at TIMESTAMPTZ`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS jos_components_completed JSONB NOT NULL DEFAULT '[]'::jsonb`,
   // Forgot-password reset tokens — hashed, single-use, time-bound
   `CREATE TABLE IF NOT EXISTS password_resets (
      id BIGSERIAL PRIMARY KEY,
